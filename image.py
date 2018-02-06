@@ -5,18 +5,22 @@ from PIL import Image
 
 class Image():
     def __init__(self, raw_bil_file):
-        self.image
+        self.image = convert_bil_to_array(raw_bil_file)
 
 
     def convert_bil_to_array(self, raw_bil_file):
-        img = gdal.open(raw_bil_file)
-        np.dstack([read_bil_file(img, ii) for ii in spectral_bands]).astype('float32')
+        # Open the .bil file
+        raw_image = gdal.open(raw_bil_file)
+
+        # Read in each spectral band, (there are 240 bands)
+        image = np.dstack([read_bil_file(raw_image, ii) for ii in range(1, 241)]).astype('float32')
+
+        return image
 
 
     ### Read in .bil files as np array
     # rasterband is the above defined spectral_bands
-    def read_bil_file(self, rasterband):
-
+    def read_bil_file(self, img, rasterband):
         gdal.GetDriverByName('EHdr').Register()
         band = img.GetRasterBand(rasterband)
         data = band.ReadAsArray()
