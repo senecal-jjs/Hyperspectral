@@ -24,8 +24,17 @@ class Image():
         gdal.GetDriverByName('EHdr').Register()
         band = img.GetRasterBand(rasterband)
         data = band.ReadAsArray()
-
         return data
+
+
+    def calibrate(self, calibration_bil):
+        calibration = np.dstack([readbilfile(calibration_bil, ii).astype('float32') for ii in range(1, 241)])
+        return calibration
+
+
+    def dark_correction(self, dark_correction_bil):
+        dark_correction = np.dstack([readbilfile(dark_correction_bil,ii).astype('float32') for ii in range(1, 241)])
+        return dark_correction
 
 
     def get_spectralon_reflectance(self, wavelength):
