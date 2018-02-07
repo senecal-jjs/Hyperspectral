@@ -101,13 +101,19 @@ class HyperCube():
 
 
     def calibrate(self, calibration_bil):
-        calibration = np.dstack([readbilfile(calibration_bil, ii).astype('float32') for ii in range(1, 241)])
+        calibration = np.dstack([self.read_bil_file(calibration_bil, ii).astype('float32') for ii in range(1, 241)])
         return calibration
 
 
     def dark_correction(self, dark_correction_bil):
-        dark_correction = np.dstack([readbilfile(dark_correction_bil,ii).astype('float32') for ii in range(1, 241)])
-        return dark_correction
+
+        dark_image = HyperCube('dark_correction.bil')
+        #dark_correction = np.dstack([dark_image.read_bil_file(dark_correction_bil,ii).astype('float32') for ii in range(1, 241)])
+        
+        dark_mean = np.mean(dark_image.image, axis=0) * 3#; dark_stddv = np.std(dark_image, axis=0);
+        ratminus_dark = self.image - dark_mean[None,:]
+
+        return ratminus_dark
 
 
     def get_spectralon_reflectance(self, wavelength):
