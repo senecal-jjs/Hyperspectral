@@ -3,5 +3,7 @@ import numpy as np
 
 
 if __name__ == '__main__':
-    img_1 = HyperCube('RedDelicious_1_Day15.bil')
-    coordinates = img_1.get_img_coords(img_1.image, 'Select Calibration Region!')
+    img_1 = HyperCube('Banana_1_Day1.bil')
+    img_1.fix_image()
+
+    img_1.display_rgb('Calibrated Image!')
