@@ -83,8 +83,11 @@ class HyperCube():
 
 
     def convert_bil_to_array(self, raw_bil_file):
+        """
+        Read in the raw .bil file and create a cube of the image
+        """
+
         gdal.GetDriverByName('EHdr').Register()
-        # Open the .bil file
         raw_image = gdal.Open(raw_bil_file)
 
         # Read in each spectral band, (there are 240 bands)
@@ -93,9 +96,11 @@ class HyperCube():
         return image
 
 
-    ### Read in .bil files as np array
-    # rasterband is the above defined spectral_bands
     def read_bil_file(self, img, rasterband):
+        """
+        Read in .bil files as np array for a given spectral band
+        """
+
         band = img.GetRasterBand(rasterband)
         data = band.ReadAsArray()
         return data
@@ -106,23 +111,16 @@ class HyperCube():
         """
 
         self.image = self.dark_correction()
-        #self.image = self.calibrate()
-        self.select_calibration_panel("Select calibration panel")
+        self.select_region("Select calibration panel", self.calibrate)
 
-        #return calibrated
-
-
-    '''def calibrate(self):
-        #calibration = np.dstack([self.read_bil_file(calibration_bil, ii).astype('float32') for ii in range(1, 241)])
-        
-        rs = RectangleSelector(ax, line_select_callback,
-                       drawtype='box', useblit=False, button=[1], 
-                       minspanx=5, minspany=5, spancoords='pixels', 
-                       interactive=True)
-
-        self.select_calibration_panel("Select calibration panel")'''
 
     def calibrate(self, eclick, erelease):
+        """
+        Given the coordindates containing the calibration panel,
+        calculate the mean reflectance of the panel, and correct
+        the image.
+        """
+
         x1, y1 = eclick.xdata, eclick.ydata
         x2, y2 = erelease.xdata, erelease.ydata
 
@@ -130,7 +128,7 @@ class HyperCube():
 
         plt.close()
 
-        panel = self.image[x1:x2,y1:y2,:] #data = dataCube[pointlist[:, 1], pointlist[:, 0], :]
+        panel = self.image[x1:x2,y1:y2,:] 
 
 
         # Extract the mean panel image
@@ -182,62 +180,22 @@ class HyperCube():
         return slope * (wavelength - lower) + lowerReflectance
 
 
-    ### Calculate the gain correction to apply to the rest of the spectra
-    def DN_to_reflectance(self, image, cal, dark, coords):
-
-        # Extract the mean and stddev of the dark correction image
-        dark_mean = np.mean(dark, axis=0); dark_stddv = np.std(dark, axis=0);
-
-
-        # Subtract dark correction from raw image
-        ratminus_dark = image - dark_mean[None,:]
-
-
-        # Extract the mean and stddev of the calibration image
-        cal_mean = np.mean(cal, axis=0); cal_stddv = np.std(cal, axis=0);
-        cal_mean = cal_mean - dark_mean[:,:640] # Subtract mean dark correction from mean calibration
-
-
-        # Select Spectralon panel to calibrate DN to reflectances
-        x1, x2, y1, y2  = coords
-        panel = ratminus_dark[x1:x2,y1:y2,:] #data = dataCube[pointlist[:, 1], pointlist[:, 0], :]
-
-
-        # Extract the mean and stddev of the panel image
-        # panel_mean is the flat field to divide out
-        panel_mean = np.mean(panel, axis=0); panel_stddv = np.std(panel, axis=0) #mean = np.mean(data, axis=0)
-
-
-        # Extract Spectralon reflectances for each wavelength
-        reflectances = np.array(map(get_spectralon_reflectance, self.imager_wavelengths[:240])).astype('float32')
-
-
-        # Calculate DN -> reflectance correction for each wavelength
-        correction = np.mean(reflectances[None,:] / panel_mean, axis=0)
-        correction = correction[None,:][None,:] # Broadcast correction to 3d array
-
-
-        return ratminus_dark * correction
-
-
-    # Extract x,y coords from displayed plot (spectralon panel)
-    # Instructions:
-    #    Wait for the image to display
-    #    Resize over image panel
-    #    Close window
-    #    The changed axes get stored and used as the Spectralon panel region to use as calibration
-    def get_img_coords(self, hs_image, imgtitle):
+    def display_rgb(self, imgtitle):
+        """
+        Displays the image in red, blue, green format. imgtitle
+        will appear above the plotted image.
+        """
 
         ### Insert the three wavelengths you want to make an 'rgb' image from the hyperspectral cube
         # The current list gives red, green and blue wavelengths (in nm) in that order
         rgb = [641, 551, 460]
         rgb_idxs = np.array([min(enumerate(self.imager_wavelengths), key=lambda x: abs(x[1] - wave))[0] for wave in rgb])
 
-        red = hs_image[:,:,rgb_idxs[0]] / np.amax(hs_image[:,:,rgb_idxs[0]])
-        green = hs_image[:,:,rgb_idxs[1]] / np.amax(hs_image[:,:,rgb_idxs[1]])
-        blue = hs_image[:,:,rgb_idxs[2]] / np.amax(hs_image[:,:,rgb_idxs[2]])
+        red = self.image[:,:,rgb_idxs[0]] / np.amax(self.image[:,:,rgb_idxs[0]])
+        green = self.image[:,:,rgb_idxs[1]] / np.amax(self.image[:,:,rgb_idxs[1]])
+        blue = self.image[:,:,rgb_idxs[2]] / np.amax(self.image[:,:,rgb_idxs[2]])
 
-        X, Y, S = hs_image.shape
+        X, Y, S = self.image.shape
 
         rgbArray = np.zeros((Y,X,3), 'uint8')
 
@@ -254,19 +212,12 @@ class HyperCube():
 
         plt.show()
 
-        # Not even deeper python magic, but it still took me forever to figure out
-        x1, x2 = axes.get_xlim()
-        y2, y1 = axes.get_ylim() # Not in order you would expect to account for imager rotation
-
-        x1, x2, y1, y2 = int(x1), int(x2), int(y1), int(y2)
-        print "Panel coordinates: ", x1, x2, y1, y2
-
-        return (x1, x2, y1, y2)
-
-    def select_calibration_panel(self, imgtitle):
+    def select_region(self, imgtitle, action):
         """
-        Allows user to draw a box around the calibration panel,
-        and returns the coordinates of the box.
+        Allows user to draw a box around the calibration panel, then carry
+        out the associated action.
+
+        Params: imgtitle (String), action (function)
         """
 
         rgb = [641, 551, 460]
@@ -291,17 +242,43 @@ class HyperCube():
         plt.title(imgtitle, fontsize=20)
         axes = plt.gca()
 
-        rs = RectangleSelector(axes, self.calibrate,
-                       drawtype='box', useblit=False, button=[1], 
-                       minspanx=5, minspany=5, spancoords='pixels', 
-                       interactive=True)
+        rs = RectangleSelector(axes, action,
+                           drawtype='box', useblit=False, button=[1], 
+                           minspanx=5, minspany=5, spancoords='pixels', 
+                           interactive=True)
 
         plt.show()
 
+    def plot_average_spectra(self, eclick, erelease):
+        x1, y1 = eclick.xdata, eclick.ydata
+        x2, y2 = erelease.xdata, erelease.ydata
 
-    ### Given a list of tuples which contain coordinates on a plant
-    # extract the spectra from each of those coordinates
-    def get_spectra(self, plant):
+        x1, x2, y1, y2 = int(x1), int(x2), int(y1), int(y2)
+
+        plt.close()
+
+        panel = self.image[x1:x2,y1:y2,:]
+
+
+        # Extract the mean panel image
+        panel_mean = np.mean(panel, axis=0)
+
+        # Extract Spectralon reflectances for each wavelength
+        reflectances = np.array(map(self.get_spectralon_reflectance, self.imager_wavelengths[:240])).astype('float32')
+
+
+        # Calculate DN -> reflectance correction for each wavelength
+        correction = np.mean(reflectances[None,:] / panel_mean, axis=0)
+        correction = correction[None,:][None,:] # Broadcast correction to 3d array
+
+        self.image = self.image * correction
+
+
+    def get_spectra(self, coords):
+        """
+        Given the (x,y) coordinates of a rectangle, get the spectra
+        for each pixel in that rectangle.
+        """
 
         spectra = []
 
@@ -320,31 +297,3 @@ class HyperCube():
         spectra = np.array(spectra)
 
         return spectra
-
-    def display_rgb(self, imgtitle):
-
-        ### Insert the three wavelengths you want to make an 'rgb' image from the hyperspectral cube
-        # The current list gives red, green and blue wavelengths (in nm) in that order
-        rgb = [641, 551, 460]
-        rgb_idxs = np.array([min(enumerate(self.imager_wavelengths), key=lambda x: abs(x[1] - wave))[0] for wave in rgb])
-
-        red = self.image[:,:,rgb_idxs[0]] / np.amax(self.image[:,:,rgb_idxs[0]])
-        green = self.image[:,:,rgb_idxs[1]] / np.amax(self.image[:,:,rgb_idxs[1]])
-        blue = self.image[:,:,rgb_idxs[2]] / np.amax(self.image[:,:,rgb_idxs[2]])
-
-        X, Y, S = self.image.shape
-
-        rgbArray = np.zeros((Y,X,3), 'uint8')
-
-        rgbArray[..., 0] = red.T * 256
-        rgbArray[..., 1] = green.T * 256
-        rgbArray[..., 2] = blue.T * 256
-
-        rgb_img = Image.fromarray(rgbArray)
-
-        plt.figure()
-        plt.imshow(rgb_img)#, origin="lower")
-        plt.title(imgtitle, fontsize=20)
-        axes = plt.gca()
-
-        plt.show()
