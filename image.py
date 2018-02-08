@@ -237,7 +237,7 @@ class HyperCube():
 
         rgb_img = Image.fromarray(rgbArray)
 
-        plt.figure()
+        plt.figure(1)
         plt.imshow(rgb_img)#, origin="lower")
         plt.title(imgtitle, fontsize=20)
         axes = plt.gca()
@@ -247,7 +247,8 @@ class HyperCube():
                            minspanx=5, minspany=5, spancoords='pixels', 
                            interactive=True)
 
-        plt.show()
+        plt.show(1)
+        plt.show(2)
 
     def plot_average_spectra(self, eclick, erelease):
         x1, y1 = eclick.xdata, eclick.ydata
@@ -255,44 +256,40 @@ class HyperCube():
 
         x1, x2, y1, y2 = int(x1), int(x2), int(y1), int(y2)
 
-        plt.close()
+        plt.close(1)
 
-        panel = self.image[x1:x2,y1:y2,:]
+        spectra = self.get_spectra(x1, x2, y1, y2)
+
+        average_spectra = np.mean(spectra, axis=0)
+
+        xi = [i for i in range(1, 241)]
+
+        plt.figure(2)
+        plt.plot(xi, average_spectra)
+
+        #Only plot every 15th x value
+        xi = [i for i in range(0, 240, 15)]
+        reduced_wavelengths = []
+        for j in xi:
+            reduced_wavelengths.append(self.imager_wavelengths[j])
+
+        plt.xticks(xi, reduced_wavelengths[:])
+        plt.ylabel('Reflectance')
+        plt.xlabel('Wavelength (nm)')
 
 
-        # Extract the mean panel image
-        panel_mean = np.mean(panel, axis=0)
-
-        # Extract Spectralon reflectances for each wavelength
-        reflectances = np.array(map(self.get_spectralon_reflectance, self.imager_wavelengths[:240])).astype('float32')
-
-
-        # Calculate DN -> reflectance correction for each wavelength
-        correction = np.mean(reflectances[None,:] / panel_mean, axis=0)
-        correction = correction[None,:][None,:] # Broadcast correction to 3d array
-
-        self.image = self.image * correction
-
-
-    def get_spectra(self, coords):
+    def get_spectra(self, x1, x2, y1, y2):
         """
         Given the (x,y) coordinates of a rectangle, get the spectra
         for each pixel in that rectangle.
         """
-
+        
         spectra = []
 
-        for loc in plant:
+        for i in range(x1, x2 + 1):
+            for j in range(y1, y2 + 1):
 
-            x1, x2, y1, y2 = loc
-
-            X = np.arange(x1,x2)
-            Y = np.arange(y1,y2)
-
-            plant_loc = np.array([ [xx,yy] for yy in Y for xx in X ])
-
-            for coords in plant_loc:
-                spectra.append(cal_images[0][coords[0], coords[1]])
+                spectra.append(self.image[i,j])
 
         spectra = np.array(spectra)
 
