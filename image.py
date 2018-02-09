@@ -3,6 +3,7 @@ import numpy as np
 from PIL import Image
 import matplotlib.pyplot as plt 
 from matplotlib.widgets  import RectangleSelector
+from sklearn.decomposition import PCA
 
 
 class HyperCube():
@@ -121,10 +122,7 @@ class HyperCube():
         the image.
         """
 
-        x1, y1 = eclick.xdata, eclick.ydata
-        x2, y2 = erelease.xdata, erelease.ydata
-
-        x1, x2, y1, y2 = int(x1), int(x2), int(y1), int(y2)
+        x1, x2, y1, y2 = self.draw_region(eclick, erelease)
 
         plt.close()
 
@@ -251,10 +249,12 @@ class HyperCube():
         plt.show(2)
 
     def plot_average_spectra(self, eclick, erelease):
-        x1, y1 = eclick.xdata, eclick.ydata
-        x2, y2 = erelease.xdata, erelease.ydata
+        """
+        Select the desired region of the image, calculate the
+        mean reflectance at each wavelength, and plot the result.
+        """
 
-        x1, x2, y1, y2 = int(x1), int(x2), int(y1), int(y2)
+        x1, x2, y1, y2 = self.draw_region(eclick, erelease)
 
         plt.close(1)
 
@@ -277,6 +277,17 @@ class HyperCube():
         plt.ylabel('Reflectance')
         plt.xlabel('Wavelength (nm)')
 
+    def draw_region(self, eclick, erelease):
+        """
+        Select a region of the image and return the coordinates.
+        """
+
+        x1, y1 = eclick.xdata, eclick.ydata
+        x2, y2 = erelease.xdata, erelease.ydata
+
+        x1, x2, y1, y2 = int(x1), int(x2), int(y1), int(y2)
+        return x1, x2, y1, y2
+
 
     def get_spectra(self, x1, x2, y1, y2):
         """
@@ -294,3 +305,12 @@ class HyperCube():
         spectra = np.array(spectra)
 
         return spectra
+
+    def pca(spectra):
+        pca = PCA()
+        X = np.random.random((100,10)) # generate an N = 100, D = 10 random data matrix
+        Z = pca.fit_transform(X)
+
+        # visualize the covariance of Z
+        plt.imshow(np.cov(Z.T))
+        plt.show()
