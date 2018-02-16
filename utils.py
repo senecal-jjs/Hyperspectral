@@ -4,6 +4,11 @@ import numpy as np
     hypercube, as they may not act on a single instantiation of the hypercube class '''
 
 def spectral_correlation(cube1, cube2):
+    '''
+    Params: Two hypercubes from which the spectral correlation of two different
+            regions will be compared.
+    '''
+
     cube1.select_region('Select Region to Compare', cube1.collect_spectra)
     cube2.select_region('Select Region to Compare', cube2.collect_spectra)
 
