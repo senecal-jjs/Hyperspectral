@@ -10,6 +10,7 @@ class HyperCube():
     def __init__(self, raw_bil_file):
         self.image = self.convert_bil_to_array(raw_bil_file)
         self.spectra = []
+        self.average_spectra = []
 
         # Wavelength specific reflectance for the Spectralon calibration panel
         # Maps wavelength (nm) to reflectance value
@@ -318,6 +319,29 @@ class HyperCube():
         spectra = np.array(spectra)
 
         return spectra
+
+    def set_average_spectra(self, eclick, erelease):
+        """
+        Select the desired region of the image, calculate the
+        mean reflectance at each wavelength, and set self.average_spectra.
+        """
+
+        x1, x2, y1, y2 = self.draw_region(eclick, erelease)
+
+        plt.close(1)
+
+        spectra = self.get_spectra(x1, x2, y1, y2)
+
+        average_spectra = np.mean(spectra, axis=0)
+
+        self.average_spectra = average_spectra
+
+    def get_average_spectra(self):
+        """
+        Getter method for the average spectra of the image
+        """
+
+        return self.average_spectra
 
 
     def pca(spectra):
