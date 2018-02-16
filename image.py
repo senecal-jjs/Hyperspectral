@@ -1,7 +1,7 @@
 import gdal
 import numpy as np
 from PIL import Image
-import matplotlib.pyplot as plt 
+import matplotlib.pyplot as plt
 from matplotlib.widgets  import RectangleSelector
 from sklearn.decomposition import PCA
 
@@ -9,6 +9,7 @@ from sklearn.decomposition import PCA
 class HyperCube():
     def __init__(self, raw_bil_file):
         self.image = self.convert_bil_to_array(raw_bil_file)
+        self.spectra = []
 
         # Wavelength specific reflectance for the Spectralon calibration panel
         # Maps wavelength (nm) to reflectance value
@@ -106,6 +107,7 @@ class HyperCube():
         data = band.ReadAsArray()
         return data
 
+
     def fix_image(self):
         """
         Perform darkness correction and reflectance calibration.
@@ -126,7 +128,7 @@ class HyperCube():
 
         plt.close()
 
-        panel = self.image[x1:x2,y1:y2,:] 
+        panel = self.image[x1:x2,y1:y2,:]
 
 
         # Extract the mean panel image
@@ -142,14 +144,15 @@ class HyperCube():
 
         self.image = self.image * correction
 
+
     def dark_correction(self):
-        """ 
+        """
         Using the dark_correction.bil file, correct for darkness
         in the image. Assumes file to be in same directory as code.
         """
 
         dark_image = HyperCube('dark_correction.bil')
-        
+
         dark_mean = np.mean(dark_image.image, axis=0)
         raw_minus_dark = self.image - dark_mean[None,:]
 
@@ -210,6 +213,7 @@ class HyperCube():
 
         plt.show()
 
+
     def select_region(self, imgtitle, action):
         """
         Allows user to draw a box around the calibration panel, then carry
@@ -241,12 +245,21 @@ class HyperCube():
         axes = plt.gca()
 
         rs = RectangleSelector(axes, action,
-                           drawtype='box', useblit=False, button=[1], 
-                           minspanx=5, minspany=5, spancoords='pixels', 
+                           drawtype='box', useblit=False, button=[1],
+                           minspanx=5, minspany=5, spancoords='pixels',
                            interactive=True)
 
         plt.show(1)
         plt.show(2)
+
+
+    def collect_spectra(self, eclick, erelease):
+        x1, x2, y1, y2 = self.draw_region(eclick, erelease)
+        plt.close(1)
+        spectra = self.get_spectra(x1, x2, y1, y2)
+        average_spectra = np.mean(spectra, axis=0)
+        self.spectra = average_spectra
+
 
     def plot_average_spectra(self, eclick, erelease):
         """
@@ -277,6 +290,7 @@ class HyperCube():
         plt.ylabel('Reflectance')
         plt.xlabel('Wavelength (nm)')
 
+
     def draw_region(self, eclick, erelease):
         """
         Select a region of the image and return the coordinates.
@@ -294,17 +308,17 @@ class HyperCube():
         Given the (x,y) coordinates of a rectangle, get the spectra
         for each pixel in that rectangle.
         """
-        
+
         spectra = []
 
         for i in range(x1, x2 + 1):
             for j in range(y1, y2 + 1):
-
                 spectra.append(self.image[i,j])
 
         spectra = np.array(spectra)
 
         return spectra
+
 
     def pca(spectra):
         pca = PCA()
