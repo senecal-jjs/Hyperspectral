@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 class autoencoder():
 
     def __init__(self, data, learning_rate = 0.01, iterations = 1000, hidden_layers = [10],
-        output_size = None, target_outputs = None, batch_size = 256):
+        output_size = None, target_outputs = None, batch_size = 32):
 
         self.data = data
         self.learning_rate = learning_rate
@@ -94,11 +94,11 @@ class autoencoder():
         """
 
         layers = []
-        data_in = tf.placeholder("float", shape=(1, self.input_size))
+        self.data_in = tf.placeholder("float", shape=[len(self.data), self.input_size])
 
         for i, weights in enumerate(self.encoder_weights):
             if i == 0:
-                layers.append(tf.nn.sigmoid(tf.add(tf.matmul(data_in, weights),
+                layers.append(tf.nn.sigmoid(tf.add(tf.matmul(self.data_in, weights),
                                    self.encoder_biases[i])))
             else:
                 layers.append(tf.nn.sigmoid(tf.add(tf.matmul(layers[i-1], weights),
@@ -132,8 +132,61 @@ class autoencoder():
 
         return layers[-1]
 
+    def train_autoencoder(self):
+        """
+        Use backprop and the training examples in self.data
+        to train the network.
+        """
+
+
+        """dataset = self.list_to_dataset()
+
+        for thing in dataset.apply(tf.contrib.data.enumerate_dataset()):
+            print thing
+            print "-------------------------------------"""
+
+        #x = tf.placeholder(tf.float32, shape=[None, self.input_size])
+        y_ = self.decoder
+
+        loss = tf.reduce_mean(tf.pow(self.data_in - y_, 2)) #Use squared error as loss
+
+        input_x = np.stack(self.data)
+        input_y = np.stack(self.target_outputs)
+
+        optimizer = tf.train.RMSPropOptimizer(self.learning_rate).minimize(loss)
+
+        # Initialize the variables (i.e. assign their default value)
+        init = tf.global_variables_initializer()
+
+        display_step = 1000
+
+        with tf.Session() as sess:
+
+                # Run the initializer
+            sess.run(init)
+            for i in range(1, self.iterations):
+
+            # Run optimization op (backprop) and cost op (to get loss value)
+                _, l = sess.run([optimizer, loss], feed_dict={self.data_in: input_x})
+            # Display logs per step
+                if i % display_step == 0 or i == 1:
+                    print('Step %i: Minibatch Loss: %f' % (i, l))
+
+            #g = sess.run(self.decoder, feed_dict={self.data_in: input_x})
+
+        return l
 
 if __name__ == '__main__':
 
-    data = [np.array([1,2,3,5]), np.array([4,2,9,2]), np.array([1.2,7.2,3,5])]
-    thing = autoencoder(data, hidden_layers = [3,2])
+    data = np.random.randn(100, 50)
+
+    #data = [np.array([2,5.4,17,2.8]), np.array([1.7,9,11,12.2]), np.array([3.1,3,6.8,1]),
+    # np.array([1,2.2,3,4])]
+
+    thing = autoencoder(data, hidden_layers = [200], iterations = 10000)
+
+    final_loss = thing.train_autoencoder()
+
+    print "Final loss achieved: " + str(final_loss)
+
+
