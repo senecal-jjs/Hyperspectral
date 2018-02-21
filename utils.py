@@ -5,6 +5,7 @@ from sklearn.decomposition import PCA
 import matplotlib.pyplot as plt
 from sklearn.preprocessing import StandardScaler
 import matplotlib.patches as mpatches
+from sklearn.cross_decomposition import PLSRegression
 
 ''' This file contains utility functions that don't necessarily belong to the class
     hypercube, as they may not act on a single instantiation of the hypercube class '''
@@ -157,6 +158,24 @@ def plot_components(data, labels):
     plt.legend(handles=patches)
     plt.title("Principal Components of Bananas\n"
         +"(all wavelengths)", fontsize=20)
-    plt.xlabel("PC-1 (82.20%)")
-    plt.ylabel("PC-2 (16.73%)")
+    plt.xlabel("PC-1 (96.16%)")
+    plt.ylabel("PC-2 (2.65%)")
     plt.show()
+
+def pls_regression(data, labels, n=None):
+    """
+    Given the spectra and the age in days, run a 
+    partial least squares regression. Unless a 
+    number of components is specified, keep all
+    components.
+    """
+
+    if not n:
+        n = len(data[0])
+
+    pls = PLSRegression(n_components=n)
+    pls.fit(data, labels)
+
+    params = pls.get_params()
+
+    print params
