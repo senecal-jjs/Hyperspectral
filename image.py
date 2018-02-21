@@ -94,7 +94,7 @@ class HyperCube():
         raw_image = gdal.Open(raw_bil_file)
 
         # Read in each spectral band, (there are 240 bands)
-        image = np.dstack([self.read_bil_file(raw_image, ii) for ii in range(1, 241)]).astype('float32')
+        image = np.dstack([self.read_bil_file(raw_image, ii) for ii in range(1, 291)]).astype('float32')
 
         return image
 
@@ -136,7 +136,7 @@ class HyperCube():
         panel_mean = np.mean(panel, axis=0)
 
         # Extract Spectralon reflectances for each wavelength
-        reflectances = np.array(map(self.get_spectralon_reflectance, self.imager_wavelengths[:240])).astype('float32')
+        reflectances = np.array(map(self.get_spectralon_reflectance, self.imager_wavelengths[:290])).astype('float32')
 
 
         # Calculate DN -> reflectance correction for each wavelength
@@ -276,13 +276,13 @@ class HyperCube():
 
         average_spectra = np.mean(spectra, axis=0)
 
-        xi = [i for i in range(1, 241)]
+        xi = [i for i in range(1, 291)]
 
         plt.figure(2)
         plt.plot(xi, average_spectra)
 
         #Only plot every 15th x value
-        xi = [i for i in range(0, 240, 15)]
+        xi = [i for i in range(0, 290, 15)]
         reduced_wavelengths = []
         for j in xi:
             reduced_wavelengths.append(self.imager_wavelengths[j])
@@ -298,7 +298,8 @@ class HyperCube():
         """
 
         x1, y1 = eclick.xdata, eclick.ydata
-        x2, y2 = erelease.xdata, erelease.ydata
+        x2, y2 = x1+20, y1+20 #grab a 20*20 grid to be uniform
+        #x2, y2 = erelease.xdata, erelease.ydata
 
         x1, x2, y1, y2 = int(x1), int(x2), int(y1), int(y2)
         return x1, x2, y1, y2
