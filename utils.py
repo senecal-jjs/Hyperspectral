@@ -1,6 +1,10 @@
 import numpy as np
 import pickle
 from image import HyperCube
+from sklearn.decomposition import PCA
+import matplotlib.pyplot as plt
+from sklearn.preprocessing import StandardScaler
+import matplotlib.patches as mpatches
 
 ''' This file contains utility functions that don't necessarily belong to the class
     hypercube, as they may not act on a single instantiation of the hypercube class '''
@@ -105,3 +109,54 @@ def clear_pickle(produce_type):
     """
 
     pickle.dump([], open( produce_type+".p", "wb" ) )
+
+def principal_components(data, n, standardize=False):
+    """
+    Return the top n principal components from the data.
+    If standardize is set to True, standardize the 
+    """
+
+    pca = PCA(n_components=n)
+    pca.fit(data)
+
+    if standardize:
+        standardized_data = standardize_data(data)
+        transformed_data = pca.transform(standardized_data)
+    else:
+        transformed_data = pca.transform(data)
+
+    print "Explained variance: ", pca.explained_variance_ratio_
+
+    return transformed_data
+
+def plot_components(data, labels):
+    """
+    Given the primary components and labels, plot the
+    primary components.
+    """
+
+    patches = []
+    patches.append(mpatches.Patch(color='blue', label='1-3 days'))
+    patches.append(mpatches.Patch(color='red', label='4-7 days'))
+    patches.append(mpatches.Patch(color='green', label='8-10 days'))
+    patches.append(mpatches.Patch(color='yellow', label='>10 days'))
+
+    for i, data_point in enumerate(data):
+        if labels[i] < 4:
+            plt.scatter(data_point[0], data_point[1], color='b', marker='o') 
+        
+        elif labels[i] > 3 and labels[i] < 8:
+            plt.scatter(data_point[0], data_point[1], color='r', marker='+') 
+            
+        elif labels[i] > 7 and labels[i] < 11:
+            plt.scatter(data_point[0], data_point[1], color='g', marker='s') 
+            
+        else:
+            plt.scatter(data_point[0], data_point[1], color='y', marker='^') 
+
+    plt.legend(handles=patches)
+    plt.title("Principal Components of Bananas\n"
+        +"(all wavelengths)", fontsize=20)
+    plt.xlabel("PC-1 (82.20%)")
+    plt.ylabel("PC-2 (16.73%)")
+    plt.show()
