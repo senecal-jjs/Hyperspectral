@@ -1,4 +1,5 @@
 import numpy as np
+import pickle
 from image import HyperCube
 
 ''' This file contains utility functions that don't necessarily belong to the class
@@ -65,3 +66,42 @@ def create_spectra_list(image_names):
         average_spectra.append(spectra)
 
     return average_spectra
+
+def pickle_a_day(produce_type, image, age):
+    """
+    Given an image name, and the age of the produce
+    (in days) when the image was taken, calibrate the
+    image for darkness and reflectance, select five
+    regions from the image, find the average reflectances
+    for each, pickling each average reflectance array as
+    inputs and the age as the target.
+
+    Specify the type of procude by spelling out the name
+    of the produce in full, using lowercase letters, and 
+    underscores for spaces (if needed).
+    """
+
+    img = HyperCube(image)
+    img.fix_image()
+
+    try:
+        produce_spectras = pickle.load( open( produce_type+".p", "rb" ))
+
+    except (OSError, IOError) as e:
+        produce_spectras = []
+
+    for _ in range(5):
+        img.select_region('Select Region', img.set_average_spectra)
+
+        spectra = np.append(img.get_average_spectra(), age) #add age as target
+        produce_spectras.append(spectra)
+
+    pickle.dump(produce_spectras, open( produce_type+".p", "wb" ) )
+
+def clear_pickle(produce_type):
+    """
+    Clear the contents of a pickle file for a
+    given type of produce.
+    """
+
+    pickle.dump([], open( produce_type+".p", "wb" ) )
