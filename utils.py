@@ -192,7 +192,8 @@ def feature_selection(data, n):
     features using PCA.
     """
 
-    pca = PCA(n_components=len(data[0]))
+    #pca = PCA(n_components=len(data[0]))
+    pca = PCA(n_components=5)
     pca.fit(data)
 
     norm_components = []
@@ -205,4 +206,8 @@ def feature_selection(data, n):
         w_sum = np.dot(feature, pca.explained_variance_ratio_)
         weighted_sums.append(w_sum)
 
-    print weighted_sums
+    print (weighted_sums)
+    print ("-------------------------------")
+    print (np.array(weighted_sums).argsort()[-n:][::-1])
+    print (np.max(weighted_sums))
+    print (weighted_sums[164])
