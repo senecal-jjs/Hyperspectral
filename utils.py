@@ -185,3 +185,24 @@ def pls_regression(data, labels, n=None):
     params = pls.get_params()
 
     print(params)
+
+def feature_selection(data, n):
+    """
+    Given a set of data, select the n most explanatory
+    features using PCA.
+    """
+
+    pca = PCA(n_components=len(data[0]))
+    pca.fit(data)
+
+    norm_components = []
+    for weight in np.absolute(pca.components_):
+        norm = weight / np.sum(weight)
+        norm_components.append(norm)
+
+    weighted_sums = []
+    for feature in np.transpose(norm_components):
+        w_sum = np.dot(feature, pca.explained_variance_ratio_)
+        weighted_sums.append(w_sum)
+
+    print weighted_sums
