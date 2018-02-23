@@ -32,12 +32,18 @@ def spectral_correlation(cube1, cube2):
     return numerator/denominator
 
 
-def spectral_info_divergence(cube1, cube2):
-    cube1.select_region('Select Region to Compare', cube1.collect_spectra)
-    cube2.select_region('Select Region to Compare', cube2.collect_spectra)
+def spectral_info_divergence(spectra1, spectra2):
+    # cube1.select_region('Select Region to Compare', cube1.collect_spectra)
+    # cube2.select_region('Select Region to Compare', cube2.collect_spectra)
 
-    cube1_spectra = np.clip(np.array(cube1.spectra), 0.01, None)
-    cube2_spectra = np.clip(np.array(cube2.spectra), 0.01, None)
+    # cube1_spectra = np.clip(np.array(cube1.spectra), 0.01, None)
+    # cube2_spectra = np.clip(np.array(cube2.spectra), 0.01, None)
+
+    # Ensure spectra our np arrays in order to apply the clip operation
+    # Clip operation is applied to avoid a divide by zero error in later
+    # operations
+    cube1_spectra = np.clip(np.array(spectra1), 0.01, None)
+    cube2_spectra = np.clip(np.array(spectra2), 0.01, None)
 
     cube1_probability = [wavelength/np.sum(cube1_spectra) for wavelength in cube1_spectra]
     cube2_probability = [wavelength/np.sum(cube2_spectra) for wavelength in cube2_spectra]
@@ -50,7 +56,7 @@ def spectral_info_divergence(cube1, cube2):
     entropy_yx = np.sum([cube2_probability[i] * np.log2(cube1_probability[i]/cube2_probability[i])
                         for i in range(n)])
 
-    return entropy_xy + entropy_yx
+    return np.abs(entropy_xy + entropy_yx)
 
 
 def create_spectra_list(image_names):
@@ -82,7 +88,7 @@ def pickle_a_day(produce_type, image, age):
     inputs and the age as the target.
 
     Specify the type of procude by spelling out the name
-    of the produce in full, using lowercase letters, and 
+    of the produce in full, using lowercase letters, and
     underscores for spaces (if needed).
     """
 
@@ -114,7 +120,7 @@ def clear_pickle(produce_type):
 def principal_components(data, n, standardize=False):
     """
     Return the top n principal components from the data.
-    If standardize is set to True, standardize the 
+    If standardize is set to True, standardize the
     """
 
     pca = PCA(n_components=n)
@@ -126,7 +132,7 @@ def principal_components(data, n, standardize=False):
     else:
         transformed_data = pca.transform(data)
 
-    print "Explained variance: ", pca.explained_variance_ratio_
+    print("Explained variance: ", pca.explained_variance_ratio_)
 
     return transformed_data
 
@@ -144,16 +150,16 @@ def plot_components(data, labels):
 
     for i, data_point in enumerate(data):
         if labels[i] < 4:
-            plt.scatter(data_point[0], data_point[1], color='b', marker='o') 
-        
+            plt.scatter(data_point[0], data_point[1], color='b', marker='o')
+
         elif labels[i] > 3 and labels[i] < 8:
-            plt.scatter(data_point[0], data_point[1], color='r', marker='+') 
-            
+            plt.scatter(data_point[0], data_point[1], color='r', marker='+')
+
         elif labels[i] > 7 and labels[i] < 11:
-            plt.scatter(data_point[0], data_point[1], color='g', marker='s') 
-            
+            plt.scatter(data_point[0], data_point[1], color='g', marker='s')
+
         else:
-            plt.scatter(data_point[0], data_point[1], color='y', marker='^') 
+            plt.scatter(data_point[0], data_point[1], color='y', marker='^')
 
     plt.legend(handles=patches)
     plt.title("Principal Components of Bananas\n"
@@ -164,8 +170,8 @@ def plot_components(data, labels):
 
 def pls_regression(data, labels, n=None):
     """
-    Given the spectra and the age in days, run a 
-    partial least squares regression. Unless a 
+    Given the spectra and the age in days, run a
+    partial least squares regression. Unless a
     number of components is specified, keep all
     components.
     """
@@ -178,4 +184,4 @@ def pls_regression(data, labels, n=None):
 
     params = pls.get_params()
 
-    print params
+    print(params)
