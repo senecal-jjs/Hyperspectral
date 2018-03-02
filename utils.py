@@ -1,7 +1,7 @@
 import numpy as np
 import pickle
 from image import HyperCube
-from sklearn.decomposition import PCA
+from sklearn.decomposition import PCA, KernelPCA
 import matplotlib.pyplot as plt
 from sklearn.preprocessing import StandardScaler
 import matplotlib.patches as mpatches
@@ -136,6 +136,19 @@ def principal_components(data, n, standardize=False):
 
     return transformed_data
 
+def kernel_pca(data, n):
+    """
+    Return the top n principal components determined by
+    the kernel PCA, using an RBF kernel
+    """
+
+    kpca = KernelPCA(kernel="rbf", n_components=n)
+    transformed_data = kpca.fit_transform(data)
+
+    #print kpca.alphas_
+
+    return transformed_data
+
 def plot_components(data, labels):
     """
     Given the primary components and labels, plot the
@@ -162,10 +175,10 @@ def plot_components(data, labels):
             plt.scatter(data_point[0], data_point[1], color='y', marker='^')
 
     plt.legend(handles=patches)
-    plt.title("Principal Components of Bananas\n"
-        +"(all wavelengths)", fontsize=20)
-    plt.xlabel("PC-1 (96.16%)")
-    plt.ylabel("PC-2 (2.65%)")
+    plt.title("Principal Components of Tomatoes\n"
+        +"(all features, rbf)", fontsize=20)
+    plt.xlabel("PC-1")
+    plt.ylabel("PC-2")
     plt.show()
 
 def pls_regression(data, labels, n=None):
@@ -192,8 +205,8 @@ def feature_selection(data, n):
     features using PCA.
     """
 
-    #pca = PCA(n_components=len(data[0]))
-    pca = PCA(n_components=5)
+    pca = PCA(n_components=len(data[0]))
+    #pca = PCA(n_components=n)
     pca.fit(data)
 
     norm_components = []
@@ -210,4 +223,28 @@ def feature_selection(data, n):
     print ("-------------------------------")
     print (np.array(weighted_sums).argsort()[-n:][::-1])
     print (np.max(weighted_sums))
-    print (weighted_sums[164])
+
+def kernel_feature_selection(data, n):
+    """
+    Given a set of data, select the n most explanatory
+    features using kernel PCA.
+    """
+
+    #pca = PCA(n_components=len(data[0]))
+    kpca = KernelPCA(kernel="rbf", fit_inverse_transform=True, n_components=n)
+    kpca.fit(data)
+
+    norm_components = []
+    for weight in np.absolute(kpca.components_):
+        norm = weight / np.sum(weight)
+        norm_components.append(norm)
+
+    weighted_sums = []
+    for feature in np.transpose(norm_components):
+        w_sum = np.dot(feature, kpca.explained_variance_ratio_)
+        weighted_sums.append(w_sum)
+
+    print (weighted_sums)
+    print ("-------------------------------")
+    print (np.array(weighted_sums).argsort()[-n:][::-1])
+    print (np.max(weighted_sums))

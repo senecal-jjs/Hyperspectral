@@ -5,7 +5,7 @@ import utils
 
 
 if __name__ == '__main__':
-    img_1 = HyperCube('Banana_1_Day1.bil')
+    #img_1 = HyperCube('Banana_1_Day1.bil')
     #img_1.fix_image()
 
     #img_1.select_region('Select Region to Plot', img_1.plot_average_spectra)
@@ -13,7 +13,7 @@ if __name__ == '__main__':
     #utils.pickle_a_day('banana', 'Banana_1_Day15.bil', 15)
 
     try:
-        produce_spectra = pickle.load( open( "banana.p", "rb" ))
+        produce_spectra = pickle.load( open( "tomato.p", "rb" ))
 
     except (OSError, IOError) as e:
         produce_spectra = []
@@ -21,9 +21,11 @@ if __name__ == '__main__':
     reflectances = [item[:290] for item in produce_spectra]
     labels = [int(item[290]) for item in produce_spectra]
 
+    #utils.feature_selection(reflectances, 8)
 
     #new_data = utils.principal_components(reflectances, 2)
-    #utils.plot_components(new_data, labels)
+    new_data = utils.kernel_pca(reflectances, 2)
+    utils.plot_components(new_data, labels)
 
     """print img_1.imager_wavelengths[26]
     print img_1.imager_wavelengths[68]
@@ -48,7 +50,26 @@ if __name__ == '__main__':
     	temp = np.array(temp)
     	paper_wavelengths.append(temp)
 
-    new_data = utils.principal_components(paper_wavelengths, 2)"""
-    #utils.plot_components(new_data, labels)
+    #new_data = utils.principal_components(paper_wavelengths, 2)
+    new_data = utils.kernel_pca(paper_wavelengths, 2)
+    utils.plot_components(new_data, labels)"""
 
-    utils.pls_regression(reflectances, labels)
+    #utils.pls_regression(reflectances, labels)
+
+    """tomato_wavelengths = []
+    for spectrum in produce_spectra:
+        temp = []
+        temp.append(spectrum[146])
+        temp.append(spectrum[147])
+        temp.append(spectrum[144])
+        temp.append(spectrum[145])
+        temp.append(spectrum[148])
+        temp.append(spectrum[150])
+        temp.append(spectrum[143])
+        temp.append(spectrum[149])
+        temp = np.array(temp)
+        tomato_wavelengths.append(temp)
+
+    #new_data = utils.principal_components(tomato_wavelengths, 2)
+    new_data = utils.kernel_pca(tomato_wavelengths, 2)
+    utils.plot_components(new_data, labels)"""
