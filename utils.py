@@ -3,7 +3,7 @@ import pickle
 from image import HyperCube
 from sklearn.decomposition import PCA, KernelPCA
 import matplotlib.pyplot as plt
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import StandardScaler, normalize
 import matplotlib.patches as mpatches
 from sklearn.cross_decomposition import PLSRegression
 
@@ -142,7 +142,7 @@ def kernel_pca(data, n):
     the kernel PCA, using an RBF kernel
     """
 
-    kpca = KernelPCA(kernel="rbf", n_components=n)
+    kpca = KernelPCA(kernel="cosine", n_components=n)
     transformed_data = kpca.fit_transform(data)
 
     #print kpca.alphas_
@@ -248,3 +248,34 @@ def kernel_feature_selection(data, n):
     print ("-------------------------------")
     print (np.array(weighted_sums).argsort()[-n:][::-1])
     print (np.max(weighted_sums))
+
+def pearson_coefficient_features(data, labels, n):
+    """
+    Given the input data and output labels, calculate
+    the correlation criteria, used for ranking
+    feature importance.
+    """
+
+    coefficients = []
+
+    mean_centered_labels = np.subtract(labels, np.mean(labels))
+
+    #Second term of denominator is the square root of the sum 
+    #of the squared differences between label y_i and mean(y)
+    denom_second_term = np.sqrt(np.dot(mean_centered_labels, mean_centered_labels))
+
+    for i, row in enumerate(np.transpose(data)):
+
+        mean_centered_row = np.subtract(row, np.mean(row))
+
+        #Numerator is the dot product of the mean-centered row and label
+        numerator = np.dot(mean_centered_row, mean_centered_labels)
+
+        #First term in denominator is the square root of the sum
+        #of the squared differences between data point x_i and mean(x)
+        denom_first_term = np.sqrt(np.dot(mean_centered_row, mean_centered_row))
+
+        pearson_coef = numerator/(denom_first_term*denom_second_term)
+        coefficients.append(np.abs(pearson_coef))
+
+    print (np.array(coefficients).argsort()[-n:][::-1])
