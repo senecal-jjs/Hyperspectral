@@ -10,17 +10,14 @@ from sklearn.cross_decomposition import PLSRegression
 ''' This file contains utility functions that don't necessarily belong to the class
     hypercube, as they may not act on a single instantiation of the hypercube class '''
 
-def spectral_correlation(cube1, cube2):
+def spectral_correlation(spectra1, spectra2):
     '''
     Params: Two hypercubes from which the spectral correlation of two different
             regions will be compared.
     '''
 
-    cube1.select_region('Select Region to Compare', cube1.collect_spectra)
-    cube2.select_region('Select Region to Compare', cube2.collect_spectra)
-
-    cube1_spectra = np.array(cube1.spectra)
-    cube2_spectra = np.array(cube2.spectra)
+    cube1_spectra = np.array(spectra1)
+    cube2_spectra = np.array(spectra2)
     n = len(cube1_spectra)
 
     numerator = (n * np.sum(cube1_spectra * cube2_spectra)
@@ -33,15 +30,9 @@ def spectral_correlation(cube1, cube2):
 
 
 def spectral_info_divergence(spectra1, spectra2):
-    # cube1.select_region('Select Region to Compare', cube1.collect_spectra)
-    # cube2.select_region('Select Region to Compare', cube2.collect_spectra)
-
-    # cube1_spectra = np.clip(np.array(cube1.spectra), 0.01, None)
-    # cube2_spectra = np.clip(np.array(cube2.spectra), 0.01, None)
-
-    # Ensure spectra our np arrays in order to apply the clip operation
-    # Clip operation is applied to avoid a divide by zero error in later
-    # operations
+    '''Ensure spectra our np arrays in order to apply the clip operation
+       Clip operation is applied to avoid a divide by zero error in later
+       operations'''
     cube1_spectra = np.clip(np.array(spectra1), 0.01, None)
     cube2_spectra = np.clip(np.array(spectra2), 0.01, None)
 
@@ -78,7 +69,7 @@ def create_spectra_list(image_names):
 
     return average_spectra
 
-def pickle_a_day(produce_type, image, age):
+def pickle_a_day(produce_type, image, age, num_regions=5):
     """
     Given an image name, and the age of the produce
     (in days) when the image was taken, calibrate the
@@ -101,7 +92,7 @@ def pickle_a_day(produce_type, image, age):
     except (OSError, IOError) as e:
         produce_spectras = []
 
-    for _ in range(5):
+    for _ in range(num_regions):
         img.select_region('Select Region', img.set_average_spectra)
 
         spectra = np.append(img.get_average_spectra(), age) #add age as target
