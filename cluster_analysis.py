@@ -52,41 +52,58 @@ if __name__ == '__main__':
     reflectances = [item[:290] for item in produce_spectra]
     labels = [int(item[290]) for item in produce_spectra]
 
-    plt.plot(reflectances[1], label=1)
-    plt.plot(reflectances[4], label=2)
-    plt.plot(reflectances[7], label=3)
-    plt.plot(reflectances[10], label=6)
-    plt.plot(reflectances[13], label=7)
-    plt.plot(reflectances[16], label=10)
-    plt.plot(reflectances[19], label=14)
+    # plt.plot(reflectances[3], label=1)
+    # plt.plot(reflectances[4], label=2)
+    # plt.plot(reflectances[5], label=3)
+    # plt.plot(reflectances[10], label=6)
+    # plt.plot(reflectances[13], label=7)
+    # plt.plot(reflectances[16], label=10)
+    # plt.plot(reflectances[19], label=14)
     #plt.plot(reflectances[21], label=5)
-    plt.legend(loc='upper left')
-    #plt.show()
+    # plt.legend(loc='upper left')
+    # plt.show()
     
     # Assign colors to labels
     #color_options = ['cyan', 'pink', 'magenta', 'red', 'blue', 'green', 'black']
     #b_colors = {1: 'red', 2: 'red', 3: 'red', 5: 'green', 6: 'green', 7: 'green', 9: 'black', 10: 'black', 13: 'black', 15: 'black'}
-    colors = {1: 'red', 2: 'green', 3: 'green', 6: 'cyan', 7: 'cyan', 10: 'black', 14: 'black'}
+    colors = {1: 'red', 2: 'red', 3: 'red', 6: 'green', 7: 'green', 10: 'black', 14: 'black', 16: 'magenta', 17: 'magenta', 20: 'magenta'}
     pt_colors = []
-    for label in labels:
+    for i in range(1, len(labels), 3):
         # print(label)
         # if label not in colors:
         #     colors[label] = color_options.pop()
-        pt_colors.append(colors[label])
+        pt_colors.append(colors[labels[i]])
+        pt_colors.append(colors[labels[i+1]])
 
-    pt_colors = ['red','red','blue','blue','black','black','black']
+    #pt_colors = ['red','red','blue','blue','black','black','black']
     # Use the first spectra as baseline
     baseline = reflectances[1]
 
     div = []
     corr = []
     area = []
+    dist = []
+    angle = []
     for i in range(1, len(reflectances), 3):
         div.append(utils.spectral_info_divergence(baseline, reflectances[i]))
+        div.append(utils.spectral_info_divergence(baseline, reflectances[i-1]))
+
+        corr.append(utils.spectral_correlation(baseline, reflectances[i-1]))
         corr.append(utils.spectral_correlation(baseline, reflectances[i]))
+
+        dist.append(utils.euclidean_distance(baseline, reflectances[i]))
+        dist.append(utils.euclidean_distance(baseline, reflectances[i-1]))
+
         area.append(np.trapz(reflectances[i], imager_wavelengths[1:291]))
+        area.append(np.trapz(reflectances[i-1], imager_wavelengths[1:291]))
+
+        angle.append(utils.spectral_angle(baseline, reflectances[i]))
+        angle.append(utils.spectral_angle(baseline, reflectances[i-1]))
 
     fig = plt.figure()
     ax = Axes3D(fig)
-    ax.scatter(div, corr, area, color=pt_colors)
+    ax.scatter(div, corr, angle, color=pt_colors)
+    ax.set_xlabel('Spectral Divergence')
+    ax.set_ylabel('Spectral Correlation')
+    ax.set_zlabel('Spectral Angle')
     plt.show()
