@@ -1,11 +1,13 @@
 import numpy as np
 import pickle
 from image import HyperCube
-from sklearn.decomposition import PCA
+from sklearn.decomposition import PCA, KernelPCA
 import matplotlib.pyplot as plt
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import StandardScaler, normalize
 import matplotlib.patches as mpatches
 from sklearn.cross_decomposition import PLSRegression
+from skimage import feature
+
 
 ''' This file contains utility functions that don't necessarily belong to the class
     hypercube, as they may not act on a single instantiation of the hypercube class '''
@@ -48,6 +50,20 @@ def spectral_info_divergence(spectra1, spectra2):
                         for i in range(n)])
 
     return np.abs(entropy_xy + entropy_yx)
+
+
+def euclidean_distance(spectra1, spectra2):
+    diff = np.abs(np.array(spectra1) - np.array(spectra2))
+    return np.linalg.norm(diff)
+
+
+def spectral_angle(spectra1, spectra2):
+    spectra1 = np.array(spectra1)
+    spectra2 = np.array(spectra2)
+    numerator = np.sum(spectra1 * spectra2)
+    denominator = np.sqrt(np.sum(spectra1**2)) * np.sqrt(np.sum(spectra2**2))
+    return np.arccos(numerator/denominator)
+
 
 
 def create_spectra_list(image_names):
@@ -127,6 +143,19 @@ def principal_components(data, n, standardize=False):
 
     return transformed_data
 
+def kernel_pca(data, n):
+    """
+    Return the top n principal components determined by
+    the kernel PCA, using an RBF kernel
+    """
+
+    kpca = KernelPCA(kernel="cosine", n_components=n)
+    transformed_data = kpca.fit_transform(data)
+
+    #print kpca.alphas_
+
+    return transformed_data
+
 def plot_components(data, labels):
     """
     Given the primary components and labels, plot the
@@ -153,10 +182,10 @@ def plot_components(data, labels):
             plt.scatter(data_point[0], data_point[1], color='y', marker='^')
 
     plt.legend(handles=patches)
-    plt.title("Principal Components of Bananas\n"
-        +"(all wavelengths)", fontsize=20)
-    plt.xlabel("PC-1 (96.16%)")
-    plt.ylabel("PC-2 (2.65%)")
+    plt.title("Principal Components of Tomatoes\n"
+        +"(all features, rbf)", fontsize=20)
+    plt.xlabel("PC-1")
+    plt.ylabel("PC-2")
     plt.show()
 
 def pls_regression(data, labels, n=None):
@@ -176,3 +205,162 @@ def pls_regression(data, labels, n=None):
     params = pls.get_params()
 
     print(params)
+
+def feature_selection(data, n):
+    """
+    Given a set of data, select the n most explanatory
+    features using PCA.
+    """
+
+    pca = PCA(n_components=len(data[0]))
+    #pca = PCA(n_components=n)
+    pca.fit(data)
+
+    norm_components = []
+    for weight in np.absolute(pca.components_):
+        norm = weight / np.sum(weight)
+        norm_components.append(norm)
+
+    weighted_sums = []
+    for feature in np.transpose(norm_components):
+        w_sum = np.dot(feature, pca.explained_variance_ratio_)
+        weighted_sums.append(w_sum)
+
+    print (weighted_sums)
+    print ("-------------------------------")
+    print (np.array(weighted_sums).argsort()[-n:][::-1])
+    print (np.max(weighted_sums))
+
+def kernel_feature_selection(data, n):
+    """
+    Given a set of data, select the n most explanatory
+    features using kernel PCA.
+    """
+
+    #pca = PCA(n_components=len(data[0]))
+    kpca = KernelPCA(kernel="rbf", fit_inverse_transform=True, n_components=n)
+    kpca.fit(data)
+
+    norm_components = []
+    for weight in np.absolute(kpca.components_):
+        norm = weight / np.sum(weight)
+        norm_components.append(norm)
+
+    weighted_sums = []
+    for feature in np.transpose(norm_components):
+        w_sum = np.dot(feature, kpca.explained_variance_ratio_)
+        weighted_sums.append(w_sum)
+
+    print (weighted_sums)
+    print ("-------------------------------")
+    print (np.array(weighted_sums).argsort()[-n:][::-1])
+    print (np.max(weighted_sums))
+
+def pearson_coefficient_features(data, labels, n):
+    """
+    Given the input data and output labels, calculate
+    the correlation criteria, used for ranking
+    feature importance.
+    """
+
+    coefficients = []
+
+    mean_centered_labels = np.subtract(labels, np.mean(labels))
+
+    #Second term of denominator is the square root of the sum 
+    #of the squared differences between label y_i and mean(y)
+    denom_second_term = np.sqrt(np.dot(mean_centered_labels, mean_centered_labels))
+
+    for i, row in enumerate(np.transpose(data)):
+
+        mean_centered_row = np.subtract(row, np.mean(row))
+
+        #Numerator is the dot product of the mean-centered row and label
+        numerator = np.dot(mean_centered_row, mean_centered_labels)
+
+        #First term in denominator is the square root of the sum
+        #of the squared differences between data point x_i and mean(x)
+        denom_first_term = np.sqrt(np.dot(mean_centered_row, mean_centered_row))
+
+        pearson_coef = numerator/(denom_first_term*denom_second_term)
+        coefficients.append(np.abs(pearson_coef))
+
+    print (np.array(coefficients).argsort()[-n:][::-1])
+
+def canny_edge_detection(image, title):
+    """
+    Given a grayscale image, detect the edges of the
+    image using a canny filter
+    """
+
+    edges = feature.canny(image, sigma=10)
+
+
+    # display results
+    fig, (ax1, ax2) = plt.subplots(nrows=1, ncols=2, figsize=(8, 4),
+                                    sharex=True, sharey=True)
+
+    ax1.imshow(image)#, cmap=plt.cm.gray)
+    ax1.axis('off')
+    ax1.set_title('binary image', fontsize=20)
+
+    ax2.imshow(edges, cmap=plt.cm.gray)
+    ax2.axis('off')
+    ax2.set_title('Canny filter, $\sigma=10$ - ' + title, fontsize=20)
+
+
+    fig.tight_layout()
+
+    plt.show()
+
+def detect_produce(image):
+    """
+    Given an image, automatically detect the edges
+    of the produce.
+    """
+
+    mean_image = np.mean(image.image, axis=2)
+    mean_reflectance = np.mean(mean_image)
+    stdev = np.std(mean_image)
+
+    low = mean_reflectance + stdev
+    high = low + (2*stdev)
+
+    black_and_white = to_black_and_white(image, low, high)
+    canny_edge_detection(black_and_white, "Produce")
+
+def detect_spectralon(image):
+    """
+    Given an image, automatically detect the edges
+    of the produce.
+    """
+
+    mean_image = np.mean(image.image, axis=2)
+    mean_reflectance = np.mean(mean_image)
+    stdev = np.std(mean_image)
+
+    high = np.max(mean_image)
+    low = high - (22.5*stdev)
+
+    black_and_white = to_black_and_white(image, low, high)
+    canny_edge_detection(black_and_white, "Spectralon")
+
+
+def to_black_and_white(image, low, high):
+    """
+    Given an image (as a 3-d numpy array), take the
+    mean of the spectra for each pixel to reduce to
+    2-d. If the value is between low and high, set to
+    one, else, set to zero
+    """
+
+    black_and_white = np.mean(image.image, axis=2)
+
+    for i in range(len(black_and_white)):
+        for j in range(len(black_and_white[i])):
+            if black_and_white[i][j] >= low and black_and_white[i][j] <= high:
+                black_and_white[i][j] = 1
+            else:
+                black_and_white[i][j] = 0
+
+    return black_and_white
