@@ -58,8 +58,8 @@ def euclidean_distance(spectra1, spectra2):
 
 
 def spectral_angle(spectra1, spectra2):
-    spectra1 = np.array(spectra1)
-    spectra2 = np.array(spectra2)
+    spectra1 = np.clip(np.array(spectra1), 0.0, None)
+    spectra2 = np.clip(np.array(spectra2), 0.0, None)
     numerator = np.sum(spectra1 * spectra2)
     denominator = np.sqrt(np.sum(spectra1**2)) * np.sqrt(np.sum(spectra2**2))
     return np.arccos(numerator/denominator)
