@@ -42,6 +42,63 @@ if __name__ == '__main__':
             1003.24, 1005.49, 1007.74, 1009.99, 1012.24, 1014.49, 1016.74, 1018.99, 1021.25, 1023.5
         ])
 
+    # Load tomato spectra
+    try:
+        produce_spectra = pickle.load( open( "tomato.p", "rb" ))
+    except (OSError, IOError) as e:
+        produce_spectra = []
+    
+    reflectances = [item[:290] for item in produce_spectra]
+    labels = [int(item[290]) for item in produce_spectra]
+
+    plt.plot(reflectances[2], label=1)
+    plt.plot(reflectances[7], label=2)
+    plt.plot(reflectances[12], label=3)
+    plt.plot(reflectances[17], label=6)
+    plt.plot(reflectances[22], label=7)
+    # plt.plot(reflectances[16], label=10)
+    # plt.plot(reflectances[19], label=14)
+    #plt.plot(reflectances[21], label=5)
+    plt.legend(loc='upper left')
+    # plt.show()
+    
+    # Assign colors to labels
+    colors = {1: 'red', 2: 'red', 3: 'red', 6: 'green', 7: 'green', 8: 'green', 9: 'black', 10: 'black', 14: 'black'}
+    pt_colors = []
+    for i in range(1, len(labels)):
+        pt_colors.append(colors[labels[i]])
+
+    # Use the first spectra as baseline
+    baseline = reflectances[0]
+
+    div = []
+    corr = []
+    area = []
+    dist = []
+    angle = []
+    for i in range(1, len(reflectances)):
+        div.append(utils.spectral_info_divergence(baseline, reflectances[i]))
+        #div.append(utils.spectral_info_divergence(baseline, reflectances[i-1]))
+
+        corr.append(utils.spectral_correlation(baseline, reflectances[i-1]))
+        #corr.append(utils.spectral_correlation(baseline, reflectances[i]))
+
+        dist.append(utils.euclidean_distance(baseline, reflectances[i]))
+        #dist.append(utils.euclidean_distance(baseline, reflectances[i-1]))
+
+        area.append(np.trapz(reflectances[i], imager_wavelengths[1:291]))
+        #area.append(np.trapz(reflectances[i-1], imager_wavelengths[1:291]))
+
+        angle.append(utils.spectral_angle(baseline, reflectances[i]))
+        #angle.append(utils.spectral_angle(baseline, reflectances[i-1]))
+
+    fig = plt.figure()
+    ax = Axes3D(fig)
+    ax.scatter(div, area, angle, color=pt_colors)
+    ax.set_xlabel('Spectral Divergence')
+    ax.set_ylabel('Spectral Area')
+    ax.set_zlabel('Spectral Angle')
+
     # Load banana spectra
     try:
         produce_spectra = pickle.load( open( "banana.p", "rb" ))
