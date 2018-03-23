@@ -33,24 +33,24 @@ raw_image.image = recon
 
 n_inputs = flat_pieces[0].size
 n_hidden = 100
-n_iters = 2
+n_iters = 1000
 
 
-print type(flat_pieces)
-print type(flat_pieces[0])
 sae = SparseAutoEncoder.FeedforwardSparseAutoEncoder(n_inputs,n_hidden)
-sae.training(flat_pieces,n_iter=n_iters)
+sae.training(flat_pieces[:100],n_iter=n_iters)
 
-print n_inputs
-print flat_pieces[0].shape
-print flat_pieces.shape
-
-print type(flat_pieces)
-print type(flat_pieces[0])
-encoded = sae.encode(flat_pieces[0:5].astype('float32'))
+print "Running input through autoencoder..."
+encoded = sae.encode(flat_pieces.astype('float32'))
+decoded = sae.decode(encoded)
+print "Done."
 
 
+decoded_array = decoded.eval(session=sae.sess)
 
+unflattened = utils.unflatten_multiple_images(decoded_array, piece_shape)
+recon = utils.reassemble_image(unflattened, original_shape)
+raw_image.image = recon
+raw_image.display_rgb("Reconstructed")
 
 # After training the model, an image of the representations (W1) will be saved
 # Please check trained4000.png for example
