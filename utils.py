@@ -18,8 +18,8 @@ def spectral_correlation(spectra1, spectra2):
             regions will be compared.
     '''
 
-    cube1_spectra = np.array(spectra1)
-    cube2_spectra = np.array(spectra2)
+    cube1_spectra = np.clip(np.array(spectra1), 0, None)
+    cube2_spectra = np.clip(np.array(spectra2), 0, None)
     n = len(cube1_spectra)
 
     numerator = (n * np.sum(cube1_spectra * cube2_spectra)
@@ -53,6 +53,8 @@ def spectral_info_divergence(spectra1, spectra2):
 
 
 def euclidean_distance(spectra1, spectra2):
+    spectra1 = np.clip(np.array(spectra1), 0.0, None)
+    spectra2 = np.clip(np.array(spectra2), 0.0, None)
     diff = np.abs(np.array(spectra1) - np.array(spectra2))
     return np.linalg.norm(diff)
 
@@ -64,6 +66,10 @@ def spectral_angle(spectra1, spectra2):
     denominator = np.sqrt(np.sum(spectra1**2)) * np.sqrt(np.sum(spectra2**2))
     return np.arccos(numerator/denominator)
 
+
+def area(spectra, imager_wavelengths):
+    spectra = np.clip(np.array(spectra), 0, None)
+    return np.trapz(spectra, imager_wavelengths)
 
 
 def create_spectra_list(image_names):
