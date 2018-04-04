@@ -370,3 +370,118 @@ def to_black_and_white(image, low, high):
                 black_and_white[i][j] = 0
 
     return black_and_white
+
+def add_gaussian_noise(image, stdev=10):
+    """
+    Given an image, add Gaussian noise
+    for processing in a denoising 
+    autoencoder
+    """
+
+    #Random noise with standard deviation of stdev
+    noise = np.random.uniform(-stdev, stdev, image.image.shape)
+
+    #Update the image with the generated noise
+    return np.add(image.image, noise)
+
+def divide_image(image, size=10):
+    """
+    Given a 3-d array representing an image,
+    divide the image into 10*10 squares
+    along the x and y axes, and return the
+    hyperrectangles given by those squares. 
+    Assumes width and height of the image 
+    to be divisible by 10
+    """
+
+    hyperrectangles = []
+
+    #Find the x and y dimensions of the image
+    y_dim, x_dim = image.shape[0], image.shape[1]
+
+    #Iterate left to right, top to bottom
+    for y in range(size, y_dim+1, size):
+        for x in range(size, x_dim+1, size):
+
+            hyperrectangle = image[y-size:y, x-size:x,:]
+            hyperrectangles.append(np.array(hyperrectangle))
+
+    return np.array(hyperrectangles)
+
+def reassemble_image(image_chunks, dimensions):
+    """
+    Given a segmented image and the original
+    x,y dimensions of that image, piece the
+    original image back together
+    """
+
+    reconstructed_image = []
+
+    chunks_shape = image_chunks.shape
+    num_chunks = chunks_shape[0]
+    square_size = chunks_shape[1] #Width/height of each chunk
+    num_rows = (num_chunks*square_size)/dimensions[1]
+    row_size = (num_chunks*square_size)/dimensions[0]
+
+    i = 0
+    for _ in range(num_rows):
+        row_chunk = []
+        for __ in range(row_size):
+            row_chunk.append(image_chunks[i])
+            i+=1
+
+        for k in range(square_size):
+            row = []
+            for j in range(row_size):
+                row.extend(row_chunk[j][k])
+
+            row = np.array(row)
+
+            reconstructed_image.append(row)
+
+    return np.array(reconstructed_image)
+
+def flatten(img):
+    """
+    Given an image, flatten it to 1-d array
+    """
+
+    image_shape = img.shape
+    flattened_dimension = image_shape[0] * image_shape[1] * image_shape[2]
+    return np.reshape(img, flattened_dimension)
+
+def unflatten(img, img_shape):
+    """
+    Given a flat image and a shape,
+    reshape the image and return
+    """
+
+    return np.reshape(img, img_shape)
+
+def flatten_multiple_images(img_list):
+    """
+    Given a list of images, return an
+    array containing the flattened images
+    """
+
+    flat_imgs = []
+
+    for img in img_list:
+        flat = flatten(img)
+        flat_imgs.append(flat)
+
+    return np.array(flat_imgs)
+
+def unflatten_multiple_images(img_list, img_shape):
+    """
+    Given a list of images and a shape
+    return an array of reshaped images
+    """
+
+    unflattened_imgs = []
+
+    for img in img_list:
+        unflat = unflatten(img, img_shape)
+        unflattened_imgs.append(unflat)
+
+    return np.array(unflattened_imgs)
