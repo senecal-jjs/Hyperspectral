@@ -479,3 +479,31 @@ def unflatten_multiple_images(img_list, img_shape):
         unflattened_imgs.append(unflat)
 
     return np.array(unflattened_imgs)
+
+def add_noise(image, stdev=10):
+    """
+    Given an image, add Gaussian noise
+    for processing in a denoising 
+    autoencoder
+    """
+
+    #Random noise with standard deviation of stdev
+    noise = np.random.uniform(-stdev, stdev, image.shape)
+
+    #Update the image with the generated noise
+    return np.add(image, noise)
+
+def noisy_images(img_list, stdev=10):
+    """
+    Given a list of images, add noise
+    to each image and return the
+    noisy images
+    """
+
+    noisy_imgs = []
+
+    for img in img_list:
+        noisy_img = add_noise(img, stdev)
+        noisy_imgs.append(noisy_img)
+
+    return np.array(noisy_imgs)
