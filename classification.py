@@ -4,6 +4,7 @@ import tensorflow
 from sklearn.svm import SVC
 from random import shuffle
 from sklearn.preprocessing import normalize
+from sklearn.neighbors import KNeighborsClassifier
 
 
 class classifier:
@@ -92,6 +93,8 @@ class classifier:
         """
 
         self.classifier_type = "knn"
+        self.clf = KNeighborsClassifier(n_neighbors=1)
+        self.clf.fit(self.train_in, self.train_labels)
 
     def _create_mlp(self):
         """
@@ -134,7 +137,10 @@ class classifier:
         Test knn's performance on the data
         """
 
-        pass
+        for i, test_input in enumerate(self.test_in):
+
+            prediction = self.clf.predict(test_input.reshape(1,-1))
+            print prediction, self.test_labels[i]
 
     def _test_mlp(self):
         """
@@ -153,5 +159,5 @@ if __name__ == '__main__':
         "No file found..."
 
     classify = classifier(data, norm=True)
-    classify.set_classifier('svm')
+    classify.set_classifier('knn')
     classify.test()
