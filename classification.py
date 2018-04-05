@@ -147,26 +147,41 @@ class classifier:
         Convert string labels to floats
         """
         for i in range(len(self.train_labels)):
-            if str(self.train_labels[i]) == "banana":
-                self.train_labels[i] = np.array([1.0, 0.0, 0.0])
-            elif str(self.train_labels[i]) == "tomato":
-                self.train_labels[i] = np.array([0.0, 1.0, 0.0])
-            elif str(self.train_labels[i]) == "potato":
-                self.train_labels[i] = np.array([0.0, 0.0, 1.0])
-            else:
-                print "bad data"
 
+            encoded_label = np.zeros(len(self.valid_labels))
+            index = self.label_encode[self.train_labels[i]]
+            encoded_label[index] = 1.0
+
+            self.train_labels[i] = encoded_label        
+
+    def _create_encoder(self):
+        """
+        Create encoding and decoding
+        dictionaries for label to float
+        translation and vice versa
+        """
+
+        label_enc = {}
+        label_dec = {}
+
+        for i, label in enumerate(self.valid_labels):
+            label_enc[label] = i
+            label_dec[i] = label 
+
+        self.label_decode = label_dec
+        self.label_encode = label_enc
 
     def _test_mlp(self):
         """
         Test the MLP's performance on the data
         """
 
+        self._create_encoder()
         self._labels_to_floats()
 
-        learning_rate = 0.001
+        learning_rate = 0.01
         momentum = 0.3
-        iterations = 200
+        iterations = 2000
         batch_size = 100
         display_step = 1
         input_size = len(self.inputs[0])
@@ -200,7 +215,7 @@ class classifier:
         loss = tf.reduce_mean(
             tf.nn.softmax_cross_entropy_with_logits(logits=layer_out, labels=y))
 
-        optimizer = tf.train.AdamOptimizer(0.1).minimize(loss)
+        optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate).minimize(loss)
 
         init = tf.global_variables_initializer()
 
@@ -213,7 +228,9 @@ class classifier:
 
                 _, l = sess.run([optimizer, loss], feed_dict=
                     {x: self.train_in, y:self.train_labels})
-                print(l)
+                
+                if i% 50 == 0:
+                    print("loss after iteration " + str(i) + " is: " + str(l))
 
             print("-----------------------------")
 
@@ -221,7 +238,7 @@ class classifier:
             out = sess.run(layer_out, feed_dict={x: self.test_in})
             for i in range(len(self.test_in)):
                 #print ("in: " + str(data_in[i]) + "      out: " + str(out[i]) + "   true: " + str(data_out[i]))
-                print ("out: " + str(out[i]) + 
+                print ("out: " + self.label_decode[np.argmax(out[i])] + 
                     "   true: " + str(self.test_labels[i]))
 
 if __name__ == '__main__':
@@ -232,6 +249,6 @@ if __name__ == '__main__':
     except (OSError, IOError) as e:
         "No file found..."
 
-    classify = classifier(data, norm=True)
+    classify = classifier(data, norm=False)
     classify.set_classifier('mlp')
     classify.test()
