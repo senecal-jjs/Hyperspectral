@@ -183,7 +183,7 @@ class classifier:
         momentum = 0.3
         iterations = 2000
         batch_size = 100
-        display_step = 1
+        display_step = 50
         input_size = len(self.inputs[0])
         output_size = len(self.valid_labels)
         hidden_size_1 = 15
@@ -229,7 +229,7 @@ class classifier:
                 _, l = sess.run([optimizer, loss], feed_dict=
                     {x: self.train_in, y:self.train_labels})
                 
-                if i% 50 == 0:
+                if i% display_step == 0.5:
                     print("loss after iteration " + str(i) + " is: " + str(l))
 
             print("-----------------------------")
@@ -241,6 +241,45 @@ class classifier:
                 print ("out: " + self.label_decode[np.argmax(out[i])] + 
                     "   true: " + str(self.test_labels[i]))
 
+            if self.label_decode[np.argmax(out[i])] == str(self.test_labels[i]):
+                self.correct += 1 
+
+    def leave_one_out(self):
+        """
+        Run leave-one-out cross validation
+        for the mlp classifier
+        """
+
+        self.correct = 0
+
+        for i in range(len(self.inputs)):
+            self._lou_data(i)
+            self._test_mlp()
+
+        print "Attained accuracy of: " + str(
+            round(float(self.correct)/len(self.inputs)*100.0, 2)) + "%"
+
+    def _lou_data(self, i):
+        """
+        Split data into train and test
+        """
+
+        self.inputs = list(self.inputs)
+
+        if i == len(self.inputs)-1:
+            self.train_in = self.inputs[:i]
+            self.train_labels = self.labels[:i]
+            self.test_in = self.inputs[-1:]
+            self.test_labels = self.labels[-1:]
+
+
+
+        self.train_in = self.inputs[:i] + self.inputs[i+1:]
+        self.train_labels = self.labels[:i] + self.labels[i+1:]
+        self.test_in = self.inputs[i:i+1]
+        self.test_labels = self.labels[i:i+1]
+
+
 if __name__ == '__main__':
 
     try:
@@ -249,6 +288,7 @@ if __name__ == '__main__':
     except (OSError, IOError) as e:
         "No file found..."
 
-    classify = classifier(data, norm=False)
+    classify = classifier(data, norm=True)
     classify.set_classifier('mlp')
-    classify.test()
+    #classify.test()
+    classify.leave_one_out()
