@@ -287,7 +287,7 @@ class HyperCube():
         for j in xi:
             reduced_wavelengths.append(self.imager_wavelengths[j])
 
-        plt.xticks(xi, reduced_wavelengths[:])
+        plt.xticks(xi, [round(i) for i in reduced_wavelengths])
         plt.ylabel('Reflectance')
         plt.xlabel('Wavelength (nm)')
 
@@ -326,15 +326,10 @@ class HyperCube():
         Select the desired region of the image, calculate the
         mean reflectance at each wavelength, and set self.average_spectra.
         """
-
         x1, x2, y1, y2 = self.draw_region(eclick, erelease)
-
         plt.close(1)
-
         spectra = self.get_spectra(x1, x2, y1, y2)
-
         average_spectra = np.mean(spectra, axis=0)
-
         self.average_spectra = average_spectra
 
     def get_average_spectra(self):

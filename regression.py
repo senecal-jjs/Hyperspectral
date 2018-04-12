@@ -2,6 +2,7 @@ import tensorflow as tf
 from sklearn.model_selection import train_test_split
 import numpy as np 
 import pickle 
+import utils
 
 tf.logging.set_verbosity(tf.logging.INFO)
 
@@ -28,7 +29,7 @@ def model(features, labels, mode):
     return tf.estimator.EstimatorSpec(mode=mode, loss=loss, eval_metric_ops=eval_metric_ops)
 
 
-def preprocess(data_file):
+def preprocess(data_file, calc_features=False):
     try:
         produce_spectra = pickle.load( open( data_file, "rb" ))
     except (OSError, IOError) as e:
@@ -36,13 +37,25 @@ def preprocess(data_file):
         produce_spectra = []
 
     reflectances = [item[:-1] for item in produce_spectra]
+    baseline = reflectances[0]
     labels = [int(item[-1]) for item in produce_spectra]
 
-    return {'feature': np.vstack(reflectances), "label": labels}
+    if calc_features:
+        feature_vectors = []
+        for curve in reflectances:
+            div = utils.spectral_info_divergence(baseline, curve)
+            corr = utils.spectral_correlation(baseline, curve)
+            dist = utils.euclidean_distance(baseline, curve)
+            angle = utils.spectral_angle(baseline, curve)
+            feature_vectors.append([div,corr,dist,angle])
+
+        return {'feature': np.vstack(feature_vectors), "label": labels}
+    else:
+        return {'feature': np.vstack(reflectances), "label": labels}
 
 
 def run(data_file):
-    data_dict = preprocess(data_file)
+    data_dict = preprocess(data_file, calc_features=False)
 
     # Create training and test data
     X_train, X_test, y_train, y_test = train_test_split(data_dict['feature'], data_dict['label'], test_size=0.33)
@@ -75,4 +88,4 @@ def run(data_file):
 
    
 if __name__ == "__main__":
-    run("potato1.p")
+    run("Formatted_Data/banana.p")
