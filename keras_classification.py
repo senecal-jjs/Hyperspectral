@@ -24,6 +24,7 @@ class classifier:
         self.inputs = self._extract_input(norm)
         self.labels = self._extract_labels()
         self.valid_labels = self._get_valid_labels()
+        self.encoder = LabelEncoder()
 
     def _extract_input(self, norm):
         """
@@ -60,9 +61,8 @@ class classifier:
         One hot encode the labels
         """
 
-        encoder = LabelEncoder()
-        encoder.fit(self.labels)
-        self.labels = encoder.transform(self.labels)
+        self.encoder.fit(self.labels)
+        self.labels = self.encoder.transform(self.labels)
         self.labels = np_utils.to_categorical(self.labels)
 
 
@@ -71,12 +71,8 @@ class classifier:
         Train the mlp on the training data
         """
 
-        #self._create_encoder()
-        #self._labels_to_floats()
         self._ohe_labels()
 
-        learning_rate = 0.01
-        iterations = 2000
         input_size = len(self.inputs[0])
         output_size = len(self.valid_labels)
         hidden_size_1 = 15
@@ -92,7 +88,6 @@ class classifier:
         model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
 
         # Configure data
-        #data = preprocess(datafile)
         features = self.inputs
         labels = self.labels
         kfold = KFold(n_splits=10, shuffle=True, random_state=5)
@@ -111,7 +106,7 @@ class classifier:
             return scores 
 
         else:
-            model.fit(features, labels, epochs=25, batch_size=5, verbose=2)
+            model.fit(features, labels, epochs=20, batch_size=5, verbose=2)
             return model
 
 
@@ -124,12 +119,14 @@ class classifier:
 
         n=10
         file_path = 'YukonGold_Tomato_Banana_1_Day3.bil'
+
         print ("Loading image...")
         raw_image = image.HyperCube(file_path)
         raw_image.dark_correction()
         original_shape = raw_image.image.shape
         orig_x = original_shape[0]
         orig_y = original_shape[1]
+
         print ("Dividing image...")
         divided_image_reflectances = utils.avg_spectra_divided_image(raw_image, n)
 
@@ -144,9 +141,17 @@ class classifier:
 
         print ("Classifying image...")
         classified_image = model.predict(divided_image_reflectances)
-        
-        #classified_image = np.reshape(classified_image, (orig_x/n, orig_y/n, 1))
-        #return classified_image
+
+        number_labels = []
+        for im in classified_image:
+            number_labels.append(np.argmax(im))
+
+        number_labels = np.array(number_labels).astype(int)
+
+        labeled_image = self.encoder.inverse_transform(number_labels)
+        labeled_image = np.reshape(labeled_image, (orig_x/n, orig_y/n, 1))
+
+        return labeled_image
 
 if __name__ == '__main__':
 
@@ -158,14 +163,7 @@ if __name__ == '__main__':
 
     classify = classifier(data, norm=True)
     #classify.train_mlp(cv=True)
-    classify.classify_new_image()
 
+    image_classes = classify.classify_new_image()
 
-    #classify.test()
-    #classify.leave_one_out()
-
-    #print float(classify.correct)/len(classify.test_in)
-
-    #image_classes = classify.classify_new_image()
-
-    #pickle.dump(image_classes, open("image_labels.p", "wb" ) )
+    pickle.dump(image_classes, open("image_labels.p", "wb" ) )
