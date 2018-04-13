@@ -514,7 +514,7 @@ def noisy_images(img_list, stdev=10):
 
     return np.array(noisy_imgs)
 
-def avg_spectra_divided_image(image, n=50):
+def avg_spectra_divided_image(image, n=50, norm=True):
     """
     Split the image into n by n squares,
     then get the average spectra of 
@@ -528,4 +528,8 @@ def avg_spectra_divided_image(image, n=50):
         avg_spectra.append(np.mean(chunk, axis=(0,1)))
 
     avg_spectra = np.array(avg_spectra)
+    
+    if norm:
+        avg_spectra = normalize(avg_spectra)
+
     return avg_spectra

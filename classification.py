@@ -7,6 +7,7 @@ from sklearn.preprocessing import normalize
 from sklearn.neighbors import KNeighborsClassifier
 import utils
 import image
+import pickle
 
 
 class classifier:
@@ -299,9 +300,10 @@ class classifier:
         square of a divided image
         """
 
-        n=10
-        file_path = 'YukonGold_Tomato_Banana_1_Day7.bil'
+        n=1
+        file_path = 'YukonGold_Tomato_Banana_1_Day3.bil'
         raw_image = image.HyperCube(file_path)
+        raw_image.dark_correction()
         original_shape = raw_image.image.shape
         orig_x = original_shape[0]
         orig_y = original_shape[1]
@@ -393,4 +395,5 @@ if __name__ == '__main__':
     #print float(classify.correct)/len(classify.test_in)
 
     image_classes = classify.classify_new_image()
-    print image_classes
+
+    pickle.dump(image_classes, open("image_labels.p", "wb" ) )
