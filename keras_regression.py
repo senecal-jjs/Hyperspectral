@@ -5,6 +5,17 @@ from sklearn.model_selection import StratifiedKFold
 import numpy as np
 import utils
 import pickle
+import os
+
+
+def save_model(filename, model):
+    checkpoint_dir = os.path.join(os.getcwd(), "Models")
+
+    if not os.path.exists(checkpoint_dir):
+        os.makedirs(checkpoint_dir)
+
+    checkpoint_path = os.path.join(checkpoint_dir, filename)
+    model.save_weights(checkpoint_path)
 
 
 def preprocess(data_file, calc_features=False):
@@ -32,7 +43,7 @@ def preprocess(data_file, calc_features=False):
         return {'feature': np.vstack(reflectances), "label": labels}
 
 
-def run_model(datafile):
+def run_model(datafile, model_name):
     # Create the MLP
     model = Sequential()
     model.add(Dense(64, activation='relu', input_dim=290))
@@ -58,11 +69,12 @@ def run_model(datafile):
         print("{0}: {1}".format(model.metrics_names[1], score[1]))
         scores.append(score[1])
 
+    save_model(model_name, model)
     return scores
 
 
 if __name__ == "__main__":
-    result = run_model("Formatted_Data/potato1.p")
+    result = run_model("Formatted_Data/tomato1.p", "tomato_net")
     print("Standard Dev: {0}".format(np.std(result)))
 
 
