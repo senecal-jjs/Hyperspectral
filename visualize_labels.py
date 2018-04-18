@@ -4,101 +4,93 @@ import matplotlib.pyplot as plt
 from PIL import Image
 from keras.models import Sequential
 from keras.layers import Dense
+import keras 
 import matplotlib.cm as cm
 from matplotlib.colors import Normalize
 
-
-# Method to classify the produce in an image
-def classify_new_image(self):
-	"""
-	Load the network, then classify each
-	square of a divided image
-	"""
-
-	n=10
-	file_path = 'YukonGold_Tomato_Banana_1_Day3.bil'
-	print ("Loading image...")
-	raw_image = image.HyperCube(file_path)
-	raw_image.dark_correction()
-	original_shape = raw_image.image.shape
-	orig_x = original_shape[0]
-	orig_y = original_shape[1]
-	print ("Dividing image...")
-	divided_image_reflectances = utils.avg_spectra_divided_image(raw_image, n)
-
-	input_size = len(self.inputs[0])
-	output_size = len(self.valid_labels)
-	hidden_size_1 = 15
-	hidden_size_2 = 15
-
-	print ("Loading model...")
-	# model = self.train_mlp()
-
-	print ("Classifying image...")
-	return (model.predict(divided_image_reflectances), divided_image_reflectances)
-
-
-def assess_health(pixel_size=1, image, model_paths):
+def assess_health(image_labels, refl_curves, model_paths, pixel_size=1):
 	'''Parameters - label_array: The pixel classifications
 					model_paths: dictionary containing filepath to each produce health model '''
 	n=pixel_size
-	label_array = image[0]
-	reflectances = image[1]
+	label_array = image_labels
+	reflectances = refl_curves
+
+	print(label_array.shape)
+	print(reflectances.shape)
 
 	# Load health models
 	models = {}
 	for produce_type in model_paths.keys():
 		name = str(produce_type)
-		model = Sequential()
+		model=Sequential()
+		model.add(Dense(64, activation="relu",input_dim=290))
+		model.add(Dense(64, activation="relu"))
+		model.add(Dense(1, activation='linear'))
+		model.compile(optimizer='adam', loss='mse', metrics=['mae'])
 		model.load_weights(model_paths[produce_type])
 		models[name] = model
 
-	# try:
-	#     label_array = pickle.load( open("image_labels.p", "rb" ))
+	colors = np.empty((label_array.shape[0], label_array.shape[1]))
 
-	# except (OSError, IOError) as e:
-	#     print "nothing found by that name..."
+	# track mininum and maximum predictions for normalization to a color gradient later 
+	min_day = 100
+	max_day = -1
 
-	# #print label_array
-	# #print label_array.shape
-
-	label_array = np.transpose(label_array, axes=(1,0,2))
-	colors = np.empty((label_array.shape[0]*n, label_array.shape[1]*n, 3))
-
+	refl_index = 0
 	for y in range(label_array.shape[1]):
 		for x in range(label_array.shape[0]):
-			produce_type = label_array[x][y]
-			if produce_type = 'background':
-				colors[x][y] = np.array([0,0,0])
-			elif produce_type = 'spectralon':
-				colors[x][y] = np.array([255,255,255])
+			produce_type = label_array[x][y][0]
+			if produce_type == 'background':
+				colors[x][y] = np.array([10])
+			elif produce_type == 'spectralon':
+				colors[x][y] = np.array([12])
 			else:
-				health = models[produce_type].predict(reflectances[x][y])
-				colors[x][y] = health
+				health = models[produce_type].predict(np.array([reflectances[refl_index]]), batch_size=1)
+				if health > max_day:
+					max_day = health
+
+				if health < min_day: 
+					min_day = health
+
+				if refl_index % 100 == 0:
+					print(health)
+				colors[x][y] = health[0]
+				refl_index += 1
 
 	# Convert predictions to colormap
-	cmap = cm.winter
-	min = np.min(colors)
-	max = np.max(colors)
-	norm = Normalize(vmin=min, vmax=max)
-	colors = cmap(norm(colors))
+	# print("min color: {0}\n max color: {1}".format(min_day,max_day))
+	# norm = Normalize(vmin=min_day,vmax=max_day)
+	# cmap = plt.cm.winter
+	# print(cmap(norm(colors[x][y][0])))
 
-	# for y in range(colors.shape[1]):
-	# 	for x in range(colors.shape[0]):
-	# 		if label_array[int(x/n)][int(y/n)] == 'tomato':
-	# 			colors[x][y] = np.array([255,0,0])
-	# 		elif label_array[int(x/n)][int(y/n)] == 'banana':
-	# 			colors[x][y] = np.array([255,255,0])
-	# 		elif label_array[int(x/n)][int(y/n)] == 'potato':
-	# 			colors[x][y] = np.array([0,255,0])
-	# 		elif label_array[int(x/n)][int(y/n)] == 'background':
-	# 			colors[x][y] = np.array([0,0,0])
-	# 		elif label_array[int(x/n)][int(y/n)] == 'spectralon':
-	# 			colors[x][y] = np.array([255,255,255])
+	# for y in range(label_array.shape[1]):
+	# 	for x in range(label_array.shape[0]):
+	# 		if colors[x][y].all() != np.array([0,0,0]).all() and colors[x][y].all() != np.array([255,255,255]).all():
+	# 			colors[x][y] = cmap(norm(colors[x][y][0]))
 
+	return colors
+
+
+def rgb(minimum, maximum, value):
+    minimum, maximum = float(minimum), float(maximum)
+    ratio = 2 * (value-minimum) / (maximum - minimum)
+    b = int(max(0, 255*(1 - ratio)))
+    r = int(max(0, 255*(ratio - 1)))
+    g = 255 - b - r
+    return [r, g, b]
+
+
+if __name__ == "__main__":
+	refl = pickle.load(open("image_refl.p","rb"))
+	labels = pickle.load(open("image_labels.p","rb"))
+	model_paths = {'banana': 'Models/banana_net.h5', 'potato': 'Models/potato_net.h5', 'tomato': 'Models/tomato_net.h5'}
+	colors = assess_health(labels, refl, model_paths, pixel_size=10)
 	# plt.title("Labeled with n=1", fontsize=20)
-	# plt.imshow(colors)
-	# plt.show()
+	shape = colors.shape
+	print("color shape: {0}".format(shape))
+	plt.imshow(np.transpose(colors, (1,0)), cmap='hot')
+	plt.colorbar()
+	plt.show()
 
 	# """overlay = Image.open("../../figures/all_produce_original.png")
 	# background = Image.open("../../figures/labeled_n=10.png")
