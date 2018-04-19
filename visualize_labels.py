@@ -15,6 +15,9 @@ def assess_health(image_labels, refl_curves, model_paths, pixel_size=1):
 	label_array = image_labels
 	reflectances = refl_curves
 
+	# plt.plot(reflectances[0])
+	# plt.show()
+
 	print(label_array.shape)
 	print(reflectances.shape)
 
@@ -45,18 +48,18 @@ def assess_health(image_labels, refl_curves, model_paths, pixel_size=1):
 			elif produce_type == 'spectralon':
 				colors[x][y] = np.array([12])
 			else:
-				health = models[produce_type].predict(np.array([reflectances[refl_index]]), batch_size=1)
-				if health > max_day:
-					max_day = health
-
-				if health < min_day: 
-					min_day = health
+				health = models[produce_type].predict(np.array([reflectances[x][y]]), batch_size=1)
 
 				if refl_index % 100 == 0:
+					print(produce_type)
 					print(health)
-				colors[x][y] = health[0]
+				colors[x][y] = health
 				refl_index += 1
 
+				if produce_type == 'banana':
+					plt.plot(reflectances[x][y])
+					plt.show()
+	# loop through one more time and set background and spectralon back to values you want 
 	# Convert predictions to colormap
 	# print("min color: {0}\n max color: {1}".format(min_day,max_day))
 	# norm = Normalize(vmin=min_day,vmax=max_day)
@@ -88,7 +91,7 @@ if __name__ == "__main__":
 	# plt.title("Labeled with n=1", fontsize=20)
 	shape = colors.shape
 	print("color shape: {0}".format(shape))
-	plt.imshow(np.transpose(colors, (1,0)), cmap='hot')
+	plt.imshow(np.transpose(colors, (1,0)), cmap='nipy_spectral')
 	plt.colorbar()
 	plt.show()
 

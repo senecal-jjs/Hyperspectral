@@ -15,6 +15,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.model_selection import KFold
 from sklearn.preprocessing import LabelEncoder
 from keras.utils import np_utils
+import matplotlib.pyplot as plt
 
 
 class classifier:
@@ -128,8 +129,8 @@ class classifier:
         square of a divided image
         """
 
-        n=15
-        file_path = 'YukonGold_Tomato_Banana_1_Day3.bil'
+        n=5
+        file_path = 'Data/YukonGold_Tomato_Banana_1_Day3.bil'
 
         print ("Loading image...")
         raw_image = image.HyperCube(file_path)
@@ -163,6 +164,9 @@ class classifier:
 
         raw_image.fix_image()
         divided_image_reflectances = utils.avg_spectra_divided_image(raw_image, n)
+        divided_image_reflectances = np.reshape(divided_image_reflectances, (orig_x/n, orig_y/n, 290))
+        plt.plot(divided_image_reflectances[0][0])
+        plt.show()
 
         return (labeled_image, divided_image_reflectances)
 
