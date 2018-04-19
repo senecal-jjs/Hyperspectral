@@ -96,7 +96,17 @@ class classifier:
 
         if cv:
             for train, test in kfold.split(features, labels):
-                model.fit(features[train], labels[train], epochs=50, batch_size=5, verbose=2)
+
+                # Create the MLP
+                model = Sequential()
+                model.add(Dense(hidden_size_1, activation='relu', input_dim=input_size))
+                model.add(Dense(hidden_size_2, activation='relu'))
+                model.add(Dense(output_size, activation='softmax'))
+
+                # Compile model with optimizer and loss function
+                model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
+        
+                model.fit(features[train], labels[train], epochs=25, batch_size=5, verbose=2)
 
                 # evaluate the model
                 score = model.evaluate(features[test], labels[test], verbose=2)
@@ -162,8 +172,10 @@ if __name__ == '__main__':
         "No file found..."
 
     classify = classifier(data, norm=True)
-    #classify.train_mlp(cv=True)
+    errors = classify.train_mlp(cv=True)
+    for error in errors:
+        print (error)
 
-    image_classes = classify.classify_new_image()
+    #image_classes = classify.classify_new_image()
 
     pickle.dump(image_classes, open("image_labels.p", "wb" ) )
