@@ -8,6 +8,7 @@ from sklearn.neighbors import KNeighborsClassifier
 import utils
 import image
 import pickle
+import os
 from keras.models import Sequential
 from keras.layers import Dense
 from sklearn.model_selection import train_test_split
@@ -127,8 +128,8 @@ class classifier:
         square of a divided image
         """
 
-        n=10
-        file_path = 'YukonGold_Tomato_Banana_1_Day3.bil'
+        n=15
+        file_path = 'Data/YukonGold_Tomato_1_Day11.bil'
 
         print ("Loading image...")
         raw_image = image.HyperCube(file_path)
@@ -139,7 +140,6 @@ class classifier:
 
         print ("Dividing image...")
         divided_image_reflectances = utils.avg_spectra_divided_image(raw_image, n)
-
 
         input_size = len(self.inputs[0])
         output_size = len(self.valid_labels)
@@ -161,7 +161,7 @@ class classifier:
         labeled_image = self.encoder.inverse_transform(number_labels)
         labeled_image = np.reshape(labeled_image, (orig_x/n, orig_y/n, 1))
 
-        return labeled_image
+        return (labeled_image, divided_image_reflectances)
 
 if __name__ == '__main__':
 
@@ -178,4 +178,5 @@ if __name__ == '__main__':
 
     #image_classes = classify.classify_new_image()
 
-    pickle.dump(image_classes, open("image_labels.p", "wb" ) )
+    pickle.dump(image_classes[0], open("image_labels.p", "wb" ) )
+    pickle.dump(image_classes[1], open("image_refl.p","wb"))
