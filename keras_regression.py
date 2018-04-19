@@ -43,7 +43,7 @@ def preprocess(data_file, calc_features=False):
         return {'feature': np.vstack(reflectances), "label": labels}
 
 
-def run_model(datafile, model_name):
+def run_model(datafile, model_name, cv=False):
     # Create the MLP
     model = Sequential()
     model.add(Dense(64, activation='relu', input_dim=290))
@@ -57,25 +57,29 @@ def run_model(datafile, model_name):
     data = preprocess(datafile)
     features = data['feature']
     labels = data['label']
-    kfold = StratifiedKFold(n_splits=10, shuffle=True, random_state=5)
 
-    scores = []
+    if cv:
+        kfold = StratifiedKFold(n_splits=10, shuffle=True, random_state=5)
+        scores = []
+        
+        for train, test in kfold.split(features, labels):
+            model.fit(features[train], labels[train], epochs=50, batch_size=5, verbose=0)
 
-    for train, test in kfold.split(features, labels):
-        model.fit(features[train], labels[train], epochs=50, batch_size=5, verbose=0)
-
-        # evaluate the model
-        score = model.evaluate(features[test], labels[test], verbose=0)
-        print("{0}: {1}".format(model.metrics_names[1], score[1]))
-        scores.append(score[1])
+            # evaluate the model
+            score = model.evaluate(features[test], labels[test], verbose=0)
+            print("{0}: {1}".format(model.metrics_names[1], score[1]))
+            scores.append(score[1])
+        
+        return scores
+    else: 
+        model.fit(features, labels, epochs=50, batch_size=5, verbose=1)
 
     save_model(model_name, model)
-    return scores
 
 
 if __name__ == "__main__":
-    result = run_model("Formatted_Data/tomato1.p", "tomato_net")
-    print("Standard Dev: {0}".format(np.std(result)))
+    result = run_model("Formatted_Data/tomato1.p", "tomato_net.h5")
+    #print("Standard Dev: {0}".format(np.std(result)))
 
 
 
