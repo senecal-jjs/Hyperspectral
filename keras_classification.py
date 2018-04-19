@@ -97,7 +97,17 @@ class classifier:
 
         if cv:
             for train, test in kfold.split(features, labels):
-                model.fit(features[train], labels[train], epochs=50, batch_size=5, verbose=2)
+
+                # Create the MLP
+                model = Sequential()
+                model.add(Dense(hidden_size_1, activation='relu', input_dim=input_size))
+                model.add(Dense(hidden_size_2, activation='relu'))
+                model.add(Dense(output_size, activation='softmax'))
+
+                # Compile model with optimizer and loss function
+                model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
+        
+                model.fit(features[train], labels[train], epochs=25, batch_size=5, verbose=2)
 
                 # evaluate the model
                 score = model.evaluate(features[test], labels[test], verbose=2)
@@ -107,7 +117,7 @@ class classifier:
             return scores 
 
         else:
-            model.fit(features, labels, epochs=20, batch_size=5, verbose=2)
+            model.fit(features, labels, epochs=30, batch_size=5, verbose=2)
             return model
 
 
@@ -119,11 +129,11 @@ class classifier:
         """
 
         n=15
-        file_path = 'Data/YukonGold_Tomato_1_Day11.bil'
+        file_path = 'YukonGold_Tomato_Banana_1_Day3.bil'
 
         print ("Loading image...")
         raw_image = image.HyperCube(file_path)
-        raw_image.dark_correction()
+        #raw_image.dark_correction()
         original_shape = raw_image.image.shape
         orig_x = original_shape[0]
         orig_y = original_shape[1]
@@ -151,6 +161,9 @@ class classifier:
         labeled_image = self.encoder.inverse_transform(number_labels)
         labeled_image = np.reshape(labeled_image, (orig_x/n, orig_y/n, 1))
 
+        raw_image.fix_image()
+        divided_image_reflectances = utils.avg_spectra_divided_image(raw_image, n)
+
         return (labeled_image, divided_image_reflectances)
 
 if __name__ == '__main__':
@@ -162,7 +175,9 @@ if __name__ == '__main__':
         "No file found..."
 
     classify = classifier(data, norm=True)
-    #classify.train_mlp(cv=True)
+    #errors = classify.train_mlp(cv=False)
+    #for error in errors:
+    #    print (error)
 
     image_classes = classify.classify_new_image()
 
