@@ -117,7 +117,7 @@ class classifier:
             return scores 
 
         else:
-            model.fit(features, labels, epochs=20, batch_size=5, verbose=2)
+            model.fit(features, labels, epochs=30, batch_size=5, verbose=2)
             return model
 
 
@@ -129,11 +129,11 @@ class classifier:
         """
 
         n=15
-        file_path = 'Data/YukonGold_Tomato_1_Day11.bil'
+        file_path = 'YukonGold_Tomato_Banana_1_Day3.bil'
 
         print ("Loading image...")
         raw_image = image.HyperCube(file_path)
-        raw_image.dark_correction()
+        #raw_image.dark_correction()
         original_shape = raw_image.image.shape
         orig_x = original_shape[0]
         orig_y = original_shape[1]
@@ -161,6 +161,9 @@ class classifier:
         labeled_image = self.encoder.inverse_transform(number_labels)
         labeled_image = np.reshape(labeled_image, (orig_x/n, orig_y/n, 1))
 
+        raw_image.fix_image()
+        divided_image_reflectances = utils.avg_spectra_divided_image(raw_image, n)
+
         return (labeled_image, divided_image_reflectances)
 
 if __name__ == '__main__':
@@ -172,11 +175,11 @@ if __name__ == '__main__':
         "No file found..."
 
     classify = classifier(data, norm=True)
-    errors = classify.train_mlp(cv=True)
-    for error in errors:
-        print (error)
+    #errors = classify.train_mlp(cv=False)
+    #for error in errors:
+    #    print (error)
 
-    #image_classes = classify.classify_new_image()
+    image_classes = classify.classify_new_image()
 
     pickle.dump(image_classes[0], open("image_labels.p", "wb" ) )
     pickle.dump(image_classes[1], open("image_refl.p","wb"))
