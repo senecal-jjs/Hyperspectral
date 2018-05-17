@@ -6,9 +6,32 @@ import numpy as np
 import utils
 import pickle
 import os
+from scipy import stats
+import matplotlib.pyplot as plt 
+
+
+def shuffle_weights(model, weights=None):
+    """Randomly permute the weights in `model`, or the given `weights`.
+
+    This is a fast approximation of re-initializing the weights of a model.
+
+    Assumes weights are distributed independently of the dimensions of the weight tensors
+      (i.e., the weights have the same distribution along each dimension).
+
+    :param Model model: Modify the weights of the given model.
+    :param list(ndarray) weights: The model's weights will be replaced by a random permutation of these weights.
+      If `None`, permute the model's current weights.
+    """
+    if weights is None:
+        weights = model.get_weights()
+    weights = [np.random.permutation(w.flat).reshape(w.shape) for w in weights]
+    # Faster, but less random: only permutes along the first dimension
+    # weights = [np.random.permutation(w) for w in weights]
+    model.set_weights(weights)
 
 
 def save_model(filename, model):
+    print("Saving model!")
     checkpoint_dir = os.path.join(os.getcwd(), "Models")
 
     if not os.path.exists(checkpoint_dir):
@@ -53,17 +76,35 @@ def run_model(datafile, model_name, cv=False):
     # Compile model with optimizer and loss function
     model.compile(optimizer='adam', loss='mse', metrics=['mae'])
 
+    # save weights for reintialization at each fold 
+    weights = model.get_weights()
+
     # Configure data
     data = preprocess(datafile)
     features = data['feature']
     labels = data['label']
+
+    early_features = []
+    early_labels = []
+
+    # only look at early days
+    for i in range(len(labels)):
+        if labels[i] < 5:
+            early_features.append(features[i,:])
+            early_labels.append(labels[i])
+
+    features = np.array(early_features)
+    labels = np.array(early_labels)
+
+    print("{0} data points!".format(len(labels)))
 
     if cv:
         kfold = StratifiedKFold(n_splits=10, shuffle=True, random_state=5)
         scores = []
         
         for train, test in kfold.split(features, labels):
-            model.fit(features[train], labels[train], epochs=50, batch_size=5, verbose=0)
+            shuffle_weights(model, weights=weights)
+            model.fit(features[train], labels[train], epochs=70, batch_size=5, verbose=0)
 
             # evaluate the model
             score = model.evaluate(features[test], labels[test], verbose=0)
@@ -73,13 +114,21 @@ def run_model(datafile, model_name, cv=False):
         return scores
     else: 
         model.fit(features, labels, epochs=50, batch_size=5, verbose=1)
-
-    save_model(model_name, model)
+        save_model(model_name, model)
 
 
 if __name__ == "__main__":
-    result = run_model("Formatted_Data/tomato1.p", "tomato_net.h5")
-    #print("Standard Dev: {0}".format(np.std(result)))
+    result = run_model("Formatted_Data/peppers.p", "peppers_net.h5", cv=True)
+    print("Mean: {0}\n StDev: {1}".format(np.mean(result),np.std(result)))
+    # k2, p = stats.normaltest(result) 
+    # alpha = .05
+
+    # if p < alpha:
+    #     print("Data not normal")
+    
+
+    plt.hist(result, bins='auto')
+    plt.show()
 
 
 
