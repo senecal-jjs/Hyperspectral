@@ -91,7 +91,7 @@ def create_spectra_list(image_names):
 
     return average_spectra
 
-def pickle_a_day(produce_type, image, age, num_regions=5):
+def pickle_a_day(produce_type, image, age, num_regions=1):
     """
     Given an image name, and the age of the produce
     (in days) when the image was taken, calibrate the
@@ -106,7 +106,7 @@ def pickle_a_day(produce_type, image, age, num_regions=5):
     """
 
     img = HyperCube(image)
-    img.fix_image()
+    #img.fix_image()
 
     try:
         produce_spectras = pickle.load( open( produce_type+".p", "rb" ))
@@ -115,10 +115,11 @@ def pickle_a_day(produce_type, image, age, num_regions=5):
         produce_spectras = []
 
     for _ in range(num_regions):
-        img.select_region('Select Region', img.set_average_spectra)
+        img.select_region('Select Region', img.set_region_spectra)
+        spectra = img.get_region_spectra() #add age as target
+        x = (spectra, age)
+        produce_spectras.append(x)
 
-        spectra = np.append(img.get_average_spectra(), age) #add age as target
-        produce_spectras.append(spectra)
 
     pickle.dump(produce_spectras, open( produce_type+".p", "wb" ) )
 

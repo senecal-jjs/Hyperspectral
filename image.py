@@ -11,6 +11,7 @@ class HyperCube():
         self.image = self.convert_bil_to_array(raw_bil_file)
         self.spectra = []
         self.average_spectra = []
+        self.region_spectra = []
 
         # Wavelength specific reflectance for the Spectralon calibration panel
         # Maps wavelength (nm) to reflectance value
@@ -136,7 +137,7 @@ class HyperCube():
         panel_mean = np.mean(panel, axis=0)
 
         # Extract Spectralon reflectances for each wavelength
-        reflectances = np.array(map(self.get_spectralon_reflectance, self.imager_wavelengths[:290])).astype('float32')
+        reflectances = np.array(list(map(self.get_spectralon_reflectance, self.imager_wavelengths[:290]))).astype('float32')
 
 
         # Calculate DN -> reflectance correction for each wavelength
@@ -298,7 +299,7 @@ class HyperCube():
         """
 
         x1, y1 = eclick.xdata, eclick.ydata
-        x2, y2 = x1+20, y1+20 #grab a 20*20 grid to be uniform
+        x2, y2 = x1+300, y1+300 #grab a 20*20 grid to be uniform
         #x2, y2 = erelease.xdata, erelease.ydata
 
         x1, x2, y1, y2 = int(x1), int(x2), int(y1), int(y2)
@@ -313,9 +314,15 @@ class HyperCube():
 
         spectra = []
 
-        for i in range(x1, x2 + 1):
-            for j in range(y1, y2 + 1):
-                spectra.append(self.image[i,j])
+        # for i in range(x1, x2 + 1):
+        #     for j in range(y1, y2 + 1):
+        #         spectra.append(self.image[i,j])
+        for y in range(y1, y2+1):
+            spectra_y = []
+            for x in range(x1, x2+1):
+                spectra_y.append(self.image[x,y])
+            spectra.append(spectra_y)
+
 
         spectra = np.array(spectra)
 
@@ -332,12 +339,27 @@ class HyperCube():
         average_spectra = np.mean(spectra, axis=0)
         self.average_spectra = average_spectra
 
+    def set_region_spectra(self, eclick, erelease):
+        """
+        Select the desired region of the image and set self.region_spectra.
+        """
+        x1, x2, y1, y2 = self.draw_region(eclick, erelease)
+        plt.close(1)
+        spectra = self.get_spectra(x1, x2, y1, y2)
+        self.region_spectra = spectra
+
     def get_average_spectra(self):
         """
         Getter method for the average spectra of the image
         """
 
         return self.average_spectra
+
+    def get_region_spectra(self):
+        """
+        Getter method for the spectra of a certain region of the image
+        """
+        return self.region_spectra
 
 
     def pca(spectra):
