@@ -542,3 +542,15 @@ def avg_spectra_divided_image(image, n=50, norm=False):
         avg_spectra = normalize(avg_spectra)
 
     return avg_spectra
+
+def readfiles(filename):
+    produce_spectra = []
+    for i in range(10):
+        print(i)
+        try:
+            file= pickle.load( open( filename+str(i)+".p", "rb" ))
+        except(OSError, IOError) as e:
+            print("File does not exist")
+        else:
+            produce_spectra.extend(file)
+    return produce_spectra

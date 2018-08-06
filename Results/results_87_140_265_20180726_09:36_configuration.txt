@@ -1,0 +1,8 @@
+Pooling type: avg - avg
+Hidden nodes: 75
+Weighted: False
+Activation: relu
+Kernel 1: (3, 3)
+Pooling 1: (2, 2)
+Kernel 2: (3, 3)
+Pooling 2: (2, 2)

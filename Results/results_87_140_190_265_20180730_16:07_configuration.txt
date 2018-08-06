@@ -1,0 +1,7 @@
+Data shape: (301, 301, 4)
+Pooling type: max - max
+Hidden nodes: 100
+Weighted: False
+Activation: relu
+Filters 1: 40 - Kernel 1: (7, 7) - Pooling 1: (3, 3)
+Filters 2: 30 - Kernel 2: (5, 5) - Pooling 2: (2, 2)

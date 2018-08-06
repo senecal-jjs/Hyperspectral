@@ -1,0 +1,10 @@
+Pooling type: max - max
+Hidden nodes: 50
+Weighted: True
+Activation: relu
+Filters 1: 32
+Kernel 1: (3, 3)
+Pooling 1: (2, 2)
+Filters 2: 24
+Kernel 2: (3, 3)
+Pooling 2: (2, 2)

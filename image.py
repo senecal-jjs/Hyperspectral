@@ -212,7 +212,8 @@ class HyperCube():
         plt.imshow(rgb_img)#, origin="lower")
         plt.title(imgtitle, fontsize=20)
         axes = plt.gca()
-
+        mng = plt.get_current_fig_manager()
+        mng.full_screen_toggle()
         plt.show()
 
 
@@ -250,7 +251,8 @@ class HyperCube():
                            drawtype='box', useblit=False, button=[1],
                            minspanx=5, minspany=5, spancoords='pixels',
                            interactive=True)
-
+        figManager = plt.get_current_fig_manager()
+        figManager.resize(*figManager.window.maxsize())
         plt.show(1)
         plt.show(2)
 
@@ -299,7 +301,7 @@ class HyperCube():
         """
 
         x1, y1 = eclick.xdata, eclick.ydata
-        x2, y2 = x1+300, y1+300 #grab a 20*20 grid to be uniform
+        x2, y2 = x1+50, y1+50 #grab a 20*20 grid to be uniform
         #x2, y2 = erelease.xdata, erelease.ydata
 
         x1, x2, y1, y2 = int(x1), int(x2), int(y1), int(y2)
